@@ -1,0 +1,155 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+def main():
+    return \
+'''int main(int argc, const char* const argv[])
+{
+    return 0;
+}
+'''
+
+def fori(count):
+    return 'for (int i = 0; i < ' + unicode(count) + '; ++i)\n'
+
+def fore(typename, name):
+    template = \
+'''for (
+    {0}::const_iterator it = {1}.begin()
+  , last = {1}.end()
+  ; it != last
+  ; ++it
+  )
+{{
+
+}}
+'''
+    return template.format(typename, name)
+
+def cl(name):
+    template = \
+'''/**
+ * \\brief
+ *
+ */
+class {0}
+{{
+public:
+    /// Default constructor
+    {0}()
+    {{
+    }}
+    virtual ~{0}()
+    {{
+    }}
+}};
+'''
+    return template.format(name)
+
+def clt(name):
+    template = \
+'''/**
+ * \\brief
+ *
+ */
+template <typename T>
+class {0}
+{{
+public:
+    /// Default constructor
+    {0}()
+    {{
+    }}
+    virtual ~{0}()
+    {{
+    }}
+}};
+'''
+    return template.format(name)
+
+def st(name):
+    template = \
+'''/**
+ * \\brief
+ *
+ */
+struct {0}
+{{
+}};
+'''
+    return template.format(name)
+
+def stt(name):
+    template = \
+'''/**
+ * \\brief
+ *
+ */
+template <typename T>
+struct {0}
+{{
+}};
+'''
+    return template.format(name)
+
+def t():
+    return 'template <typename T>'
+
+def brief():
+    return \
+'''/**
+ * \\brief
+ *
+ */'''
+
+def ns(name = None):
+    if bool(name):
+        nsList = name.split('::')
+        if len(nsList) > 1:
+            nsOpen = ''
+            nsReverseNames = ''
+            for ns in nsList:
+                nsOpen += 'namespace ' + ns + ' { '
+                if bool(nsReverseNames):
+                    nsReverseNames = ns + ', ' + nsReverseNames
+                else:
+                    nsReverseNames = ns
+            nsReverseNames = '}' * len(nsList) + ' ' * (60 - len(nsList)) + '// namespace ' + nsReverseNames
+            return nsOpen + '\n\n' + nsReverseNames + '\n'
+        else:
+            template = \
+'''namespace {0} {{
+
+}}                                                           // namespace {0}
+'''
+    else:
+        name = 'anonymous'
+        template = \
+'''namespace {{
+
+}}                                                           // {0} namespace
+'''
+    return template.format(name)
+
+def gs(type, name, ref = None):
+    template = \
+'''{0} {1}() const
+{{
+    return {2};
+}}
+void {1}({0} value)
+{{
+    {2} = value;
+}}
+'''
+    if ref == None:
+        arg = type
+    else:
+        arg = 'const ' + type + ref
+
+    if name.startswith('m_'):
+        pure_name = name[2:]
+    else:
+        pure_name = name
+
+    return template.format(arg, pure_name, name)
