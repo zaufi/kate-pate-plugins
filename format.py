@@ -59,6 +59,8 @@ def looksLikeTemplateAngelBracket(lineStr, column):
             return False                                    # operator>()
         if ln == ' ' and rn == '=':                         # ">="
             return False                                    # operator>=()
+        if ln == '-':
+            return False                                    # operator->()
         return True
     pass
 
@@ -121,7 +123,7 @@ def getRangeTopology(breakChars):
             if lineStr[cc] == '<':
                 if not looksLikeTemplateAngelBracket(lineStr, cc):
                     print("o< Doesn't looks like template: " + str(cl) + "," + str(cc))
-                if len(stack):                              # if stack isn't empty (i.e. there are some closing chars met)
+                elif len(stack):                            # if stack isn't empty (i.e. there are some closing chars met)
                     print("o< Pop position: " + str(stack[-1]))
                     nrl, nrc, isT = stack.pop()             # remove last position from the stack
                     if isT:
@@ -193,8 +195,7 @@ def getRangeTopology(breakChars):
             if lineStr[cc] == '>':
                 if not looksLikeTemplateAngelBracket(lineStr, cc):
                     print("c> Doesn't looks like template: " + str(cl) + "," + str(cc))
-                    continue
-                if len(stack):                              # if stack isn't empty (i.e. there are some closing chars met)
+                elif len(stack):                            # if stack isn't empty (i.e. there are some closing chars met)
                     print("c> Pop position: " + str(stack[-1]))
                     nrl, nrc, isT = stack.pop()             # remove last position from the stack
                     if isT:
