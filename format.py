@@ -9,7 +9,7 @@
 #   Boost-like Format Params (Meta+F)
 #       Format function's/template's parameters list (or `for`'s) in a boost-like style
 #       I.e. when 2nd and the rest parameters has leading comma/semicolon
-#       and closing ')' on a separate line.
+#       and closing ')' or '>' on a separate line.
 #       THIS IS REALLY BETTER TO HAVE SUCH STYLE WHEN U EDITING PARAMETERS LIST!
 #
 #   Unformat Function Params (Meta+Shift+F)
@@ -17,10 +17,11 @@
 #
 #
 
-
 import kate
 import kate.gui
+
 from PyKDE4.ktexteditor import KTextEditor
+from libkatepate import ui
 
 def getLeftNeighbour(lineStr, column):
     if column:
@@ -63,7 +64,9 @@ def looksLikeTemplateAngelBracket(lineStr, column):
             return False                                    # operator->()
         return True
     pass
-
+#
+# TODO Probably decorators may help to simplify this code ???
+#
 def getRangeTopology(breakChars):
     """Get range opened w/ `openCh' and closed w/ `closeCh'
 
@@ -105,7 +108,10 @@ def getRangeTopology(breakChars):
                             kate.KTextEditor.Range(cl, cc, nrl, nrc)
                           )
                     else:
-                        raise LookupError("Misbalanced brackets")
+                        raise LookupError(
+                            "Misbalanced brackets: '(' @" + str(cl + 1) + ',' + str(cc + 1) +
+                            " and '>' @ " + str(nrl + 1) + ',' + str(nrc + 1)
+                          )
                 else:                                       # otherwise,
                     openPos = (cl, cc + 1, False)           # remember range start (exclude an open char)
                     print("o( Found position: " + str(openPos))
@@ -122,7 +128,7 @@ def getRangeTopology(breakChars):
                 continue
             if lineStr[cc] == '<':
                 if not looksLikeTemplateAngelBracket(lineStr, cc):
-                    print("o< Doesn't looks like template: " + str(cl) + "," + str(cc))
+                    print("o< Doesn't looks like template: " + str(cl) + "," + str(cc + 1))
                 elif len(stack):                            # if stack isn't empty (i.e. there are some closing chars met)
                     print("o< Pop position: " + str(stack[-1]))
                     nrl, nrc, isT = stack.pop()             # remove last position from the stack
@@ -131,6 +137,10 @@ def getRangeTopology(breakChars):
                             kate.KTextEditor.Range(cl, cc, nrl, nrc)
                         )
                     else:
+                        raise LookupError(
+                            "Misbalanced brackets: '<' @" + str(cl + 1) + ',' + str(cc + 1) +
+                            " and ')' @ " + str(nrl + 1) + ',' + str(nrc + 1)
+                          )
                         raise LookupError("Misbalanced brackets")
                 else:
                     openPos = (cl, cc + 1, True)            # remember range start (exclude an open char)
@@ -177,7 +187,10 @@ def getRangeTopology(breakChars):
                             kate.KTextEditor.Range(nrl, nrc, cl, cc)
                         )
                     else:
-                        raise LookupError("Misbalanced brackets")
+                        raise LookupError(
+                            "Misbalanced brackets: '<' @" + str(nrl + 1) + ',' + str(nrc + 1) +
+                            " and ')' @ " + str(cl + 1) + ',' + str(cc + 1)
+                          )
                 else:
                     closePos = (cl, cc, False)
                     print("c) Found position: " + str(closePos))
@@ -203,7 +216,10 @@ def getRangeTopology(breakChars):
                             kate.KTextEditor.Range(cl, cc, nrl, nrc)
                         )
                     else:
-                        raise LookupError("Misbalanced brackets")
+                        raise LookupError(
+                            "Misbalanced brackets: '(' @" + str(nrl + 1) + ',' + str(nrc + 1) +
+                            " and '>' @ " + str(cl + 1) + ',' + str(cc + 1)
+                          )
                 else:
                     closePos = (cl, cc, True)               # remember range start (exclude an open char)
                     print("c> Found position: " + str(closePos))
@@ -222,7 +238,10 @@ def getRangeTopology(breakChars):
     assert(len(stack) == 0)                                 # stack expected to be empty!
 
     if openPos[2] != closePos[2]:
-        raise LookupError("Misbalanced brackets")
+        raise LookupError(
+            "Misbalanced brackets: at " + str(openPos[0] + 1) + ',' + str(openPos[1] + 1) +
+            " and " + str(closePos[0] + 1) + ',' + str(closePos[1] + 1)
+          )
 
     return (kate.KTextEditor.Range(openPos[0], openPos[1], closePos[0], closePos[1]), nestedRanges, breakPositions)
 
@@ -266,13 +285,23 @@ def boostFormat():
     document = kate.activeDocument()
     view = kate.activeView()
 
-    r, nestedRanges, breakPositions = getRangeTopology(',')
+    try:
+        r, nestedRanges, breakPositions = getRangeTopology(',')
+    except LookupError as error:
+        ui.popup("Failed to parse C++ expression", str(error))
+        return
+
     if r.isEmpty():                                         # Is range empty?
+        ui.popup("Failed to parse C++ expression", "Didn't found anything to format. Sorry ;-(")
         return                                              # Nothing interesting wasn't found...
 
     # Rescan the range w/ ';' as breaker added if current range is a `for` statement
     if document.line(r.start().line())[0:r.start().column() - 1].rstrip().endswith('for'):
-        r, nestedRanges, breakPositions = getRangeTopology(',;')
+        try:
+            r, nestedRanges, breakPositions = getRangeTopology(',;')
+        except LookupError as error:
+            ui.popup("Failed to parse C++ expression", str(error))
+            return
 
     # Going to format a text whithin a selected range
     lineStr = document.line(r.start().line())
@@ -304,14 +333,23 @@ def boostFormat():
     document = kate.activeDocument()
     view = kate.activeView()
 
-    r, nestedRanges, breakPositions = getRangeTopology(',')
+    try:
+        r, nestedRanges, breakPositions = getRangeTopology(',')
+    except LookupError as error:
+        ui.popup("Failed to parse C++ expression", str(error))
+        return
 
     if r.isEmpty():                                         # Is range empty?
+        ui.popup("Failed to parse C++ expression", "Didn't found anything to format. Sorry ;-(")
         return                                              # Nothing interesting wasn't found...
 
     # Rescan the range w/ ';' as breaker added if current range is a `for` statement
     if document.line(r.start().line())[0:r.start().column() - 1].rstrip().endswith('for'):
-        r, nestedRanges, breakPositions = getRangeTopology(',;')
+        try:
+            r, nestedRanges, breakPositions = getRangeTopology(',;')
+        except LookupError as error:
+            ui.popup("Failed to parse C++ expression", str(error))
+            return
 
     # Going to unformat a text whithin a selected range
     text = boostUnformatText(r, breakPositions)
