@@ -18,7 +18,6 @@
 #
 
 import kate
-import kate.gui
 
 from PyKDE4.ktexteditor import KTextEditor
 from libkatepate import ui
@@ -105,7 +104,7 @@ def getRangeTopology(breakChars):
                     nrl, nrc, isT = stack.pop()             # remove last position from the stack
                     if not isT:
                         nestedRanges.append(                # and append a nested range
-                            kate.KTextEditor.Range(cl, cc, nrl, nrc)
+                            KTextEditor.Range(cl, cc, nrl, nrc)
                           )
                     else:
                         raise LookupError(
@@ -134,7 +133,7 @@ def getRangeTopology(breakChars):
                     nrl, nrc, isT = stack.pop()             # remove last position from the stack
                     if isT:
                         nestedRanges.append(                # and append a nested range
-                            kate.KTextEditor.Range(cl, cc, nrl, nrc)
+                            KTextEditor.Range(cl, cc, nrl, nrc)
                         )
                     else:
                         raise LookupError(
@@ -149,13 +148,13 @@ def getRangeTopology(breakChars):
                     break
                 continue
             if lineStr[cc] in breakChars and len(stack) == 0:
-                breakPositions.append(kate.KTextEditor.Cursor(cl, cc))
+                breakPositions.append(KTextEditor.Cursor(cl, cc))
         # Did we found smth on the current line?
         if found:
             break                                           # Yep! Break the outer loop
 
     if not found:
-        return (kate.KTextEditor.Range(), list(), list())   # Return empty ranges if nothing found
+        return (KTextEditor.Range(), list(), list())        # Return empty ranges if nothing found
 
     assert(len(stack) == 0)                                 # stack expected to be empty!
 
@@ -184,7 +183,7 @@ def getRangeTopology(breakChars):
                     nrl, nrc, isT = stack.pop()             # remove last position from stack
                     if not isT:
                         nestedRanges.append(                # and append a nested range
-                            kate.KTextEditor.Range(nrl, nrc, cl, cc)
+                            KTextEditor.Range(nrl, nrc, cl, cc)
                         )
                     else:
                         raise LookupError(
@@ -213,7 +212,7 @@ def getRangeTopology(breakChars):
                     nrl, nrc, isT = stack.pop()             # remove last position from the stack
                     if isT:
                         nestedRanges.append(                # and append a nested range
-                            kate.KTextEditor.Range(cl, cc, nrl, nrc)
+                            KTextEditor.Range(cl, cc, nrl, nrc)
                         )
                     else:
                         raise LookupError(
@@ -227,13 +226,13 @@ def getRangeTopology(breakChars):
                     break
                 continue
             if lineStr[cc] in breakChars and len(stack) == 0:
-                breakPositions.append(kate.KTextEditor.Cursor(cl, cc))
+                breakPositions.append(KTextEditor.Cursor(cl, cc))
         # Did we found smth on the current line?
         if found:
             break                                           # Yep! Break the outer loop
 
     if not found:
-        return (kate.KTextEditor.Range(), list(), list())   # Return empty ranges if nothing found
+        return (KTextEditor.Range(), list(), list())        # Return empty ranges if nothing found
 
     assert(len(stack) == 0)                                 # stack expected to be empty!
 
@@ -243,7 +242,7 @@ def getRangeTopology(breakChars):
             " and " + str(closePos[0] + 1) + ',' + str(closePos[1] + 1)
           )
 
-    return (kate.KTextEditor.Range(openPos[0], openPos[1], closePos[0], closePos[1]), nestedRanges, breakPositions)
+    return (KTextEditor.Range(openPos[0], openPos[1], closePos[0], closePos[1]), nestedRanges, breakPositions)
 
 
 def boostFormatText(textRange, indent, breakPositions):
@@ -260,7 +259,7 @@ def boostFormatText(textRange, indent, breakPositions):
     for b in breakPositions:
         print("* prev pos: " + str(prevPos.line()) + ", " + str(prevPos.column()))
         print("* current pos: " + str(b.line()) + ", " + str(b.column()))
-        chunk = (document.text(kate.KTextEditor.Range(prevPos, b))).strip()
+        chunk = (document.text(KTextEditor.Range(prevPos, b))).strip()
         print("* current chunk:\n'" + chunk + "'")
         t = ('\n    ').join(chunk.splitlines())
         print("* current line:\n'" + t + "'")
@@ -270,7 +269,7 @@ def boostFormatText(textRange, indent, breakPositions):
             outText = '\n' + indentStr + '  ' + t + '\n'
 
         breakCh = document.character(b)
-        prevPos = kate.KTextEditor.Cursor(b.line(), b.column() + 1)
+        prevPos = KTextEditor.Cursor(b.line(), b.column() + 1)
 
     outText += indentStr
 

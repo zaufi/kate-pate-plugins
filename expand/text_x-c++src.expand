@@ -1,16 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from libkatepate import ui
+
 def main():
     return \
 '''int main(int argc, const char* const argv[])
 {
+    %{cursor}
     return 0;
 }
 '''
 
 def fori(count):
-    return 'for (int i = 0; i < ' + unicode(count) + '; ++i)\n'
+    return 'for (int i = 0; i < ' + count + '; ++i)\n    ${cursor}'
 
 def fore(typename, name):
     template = \
@@ -21,57 +24,39 @@ def fore(typename, name):
   ; ++it
   )
 {{
-
+    %{{cursor}}
 }}
 '''
     return template.format(typename, name)
 
-def cl(name):
-    template = \
+def st(name, *templateParams):
+    ''' Insert a structure definition
+
+        A first mandatory parameter is a structure name.
+        Everything after that will be template parameters.
+        Template parameter declaration may contain a default value:
+          st(foo, T, U = T, V = int)
+
+        will expand into:
+          template <typename T, typename U = T, typename V = int>
+          struct foo
+          {
+          };
+    '''
+    if len(templateParams):
+        template = \
 '''/**
- * \\brief
- *
+ * \\brief {0}
  */
-class {0}
+template <{1}>
+struct {0}
 {{
-public:
-    /// Default constructor
-    {0}()
-    {{
-    }}
-    virtual ~{0}()
-    {{
-    }}
 }};
 '''
-    return template.format(name)
-
-def clt(name):
+        return template.format(name, 'typename ' + ', typename '.join(templateParams))
     template = \
 '''/**
- * \\brief
- *
- */
-template <typename T>
-class {0}
-{{
-public:
-    /// Default constructor
-    {0}()
-    {{
-    }}
-    virtual ~{0}()
-    {{
-    }}
-}};
-'''
-    return template.format(name)
-
-def st(name):
-    template = \
-'''/**
- * \\brief
- *
+ * \\brief {0}
  */
 struct {0}
 {{
@@ -79,15 +64,46 @@ struct {0}
 '''
     return template.format(name)
 
-def stt(name):
+def cl(name, *templateParams):
+    ''' Insert a class definition
+
+        TODO It would be neat to have syntax like this:
+            cl(test, T, U, d=v, cc=del, mv=def)
+          i.e. define a class 'test' w/ template params T and U,
+          w/ virtual detor, w/ deleted copy ctor/assign and w/
+          defaulted move ctor/assign.
+
+          Isn't it?
+    '''
+    if len(templateParams):
+        template = \
+'''/**
+ * \\brief {0}
+ */
+template <{1}>
+class {0}
+{{
+    %{{cursor}}explicit {0}()
+    {{
+    }}
+    virtual ~{0}()
+    {{
+    }}
+}};
+'''
+        return template.format(name, 'typename ' + ', typename '.join(templateParams))
     template = \
 '''/**
- * \\brief
- *
+ * \\brief {0}
  */
-template <typename T>
-struct {0}
+class {0}
 {{
+    %{{cursor}}explicit {0}()
+    {{
+    }}
+    virtual ~{0}()
+    {{
+    }}
 }};
 '''
     return template.format(name)
@@ -98,11 +114,13 @@ def t():
 def brief():
     return \
 '''/**
- * \\brief
+ * \\brief %{cursor}
  *
  */'''
 
 def ns(name = None):
+    ''' Insert named or anonymous namespace
+    '''
     if bool(name):
         nsList = name.split('::')
         if len(nsList) > 1:
@@ -119,19 +137,21 @@ def ns(name = None):
         else:
             template = \
 '''namespace {0} {{
-
+%{{cursor}}
 }}                                                           // namespace {0}
 '''
     else:
         name = 'anonymous'
         template = \
 '''namespace {{
-
+%{{cursor}}
 }}                                                           // {0} namespace
 '''
     return template.format(name)
 
-def gs(type, name, ref = None):
+def gs(typeT, name, ref = None):
+    ''' Insert getter/setter for mem
+    '''
     template = \
 '''{0} {1}() const
 {{
@@ -140,15 +160,17 @@ def gs(type, name, ref = None):
 void {1}({0} value)
 {{
     {2} = value;
-}}
+}}%{{cursor}}
 '''
     if ref == None:
-        arg = type
+        arg = typeT
     else:
-        arg = 'const ' + type + ref
+        arg = 'const ' + typeT + ref
 
-    if name.startswith('m_'):
+    if name.startswith('m_'):                               # Usual code style: members start w/ 'm_' prefix
         pure_name = name[2:]
+    elif name.endswith('_'):                                # Google code style: members end w/ '_' suffix
+        pure_name = name[0:-1]
     else:
         pure_name = name
 

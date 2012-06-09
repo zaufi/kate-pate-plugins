@@ -270,10 +270,10 @@ def expandAtCursor():
     replacement = replacement.replace('\n', '\n' + whitespace)
     # cursor position set?
     cursorAdvancement = None
-    if '\1' in replacement:
-        cursorAdvancement = replacement.index('\1')
-        # strip around that byte
-        replacement = replacement[:cursorAdvancement] + replacement[cursorAdvancement + 1:]
+    if '%{cursor}' in replacement:
+        cursorAdvancement = replacement.index('%{cursor}')
+        # strip around that word
+        replacement = replacement[:cursorAdvancement] + replacement[cursorAdvancement + 9:]
     # make the removal and insertion an atomic operation
     document.startEditing()
     if argument_range is not None:
@@ -284,10 +284,18 @@ def expandAtCursor():
     document.endEditing()
 
     if cursorAdvancement is not None:
-        # print 'advancing', cursorAdvancement
-        smart = document.smartInterface().newSmartCursor(insertPosition)
-        smart.advance(cursorAdvancement)
-        view.setCursorPosition(smart)
+        # TODO The smartInterface isn't available anymore!
+        #      But it's successor (movingInterface) isn't available yet in
+        #      PyKDE4 <= 4.8.3 (at least) :(
+        while True:
+            currentLength = document.lineLength(insertPosition.line())
+            if cursorAdvancement <= currentLength:
+                break
+            else:
+                insertPosition.setLine(insertPosition.line() + 1)
+                cursorAdvancement -= currentLength + 1      # NOTE +1 for every \n char
+        insertPosition.setColumn(cursorAdvancement)
+        view.setCursorPosition(insertPosition)
 
 
 # kate: space-indent on;
