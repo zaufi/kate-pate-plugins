@@ -136,6 +136,7 @@ def loadFileExpansions(path):
         # starting with two underscores (or more importantly, a Python
         # keyword)
         if not name.startswith('__') and callable(o):
+            print("** EXPANSIONS LOADER: add " + o.__name__)
             expansions[o.__name__] = o
     return expansions
 

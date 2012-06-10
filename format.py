@@ -1,7 +1,21 @@
 # -*- coding: utf-8 -*-
 #
-# Kate/Pâté plugins to work with C++ comments
+# Kate/Pâté plugins to work with C++ code formatting
 # Copyright 2010-2012 by Alex Trubov <i.zaufi@gmail.com>
+#
+#
+# This software is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Here is a short list of plugins in this file:
 #
@@ -10,7 +24,7 @@
 #       Format function's/template's parameters list (or `for`'s) in a boost-like style
 #       I.e. when 2nd and the rest parameters has leading comma/semicolon
 #       and closing ')' or '>' on a separate line.
-#       THIS IS REALLY BETTER TO HAVE SUCH STYLE WHEN U EDITING PARAMETERS LIST!
+#       THIS IS REALLY BETTER TO HAVE SUCH STYLE WHEN U HAVE A LONG PARAMETERS LIST!
 #
 #   Unformat Function Params (Meta+Shift+F)
 #       merge everything between '(' and ')' into a single line
@@ -63,6 +77,7 @@ def looksLikeTemplateAngelBracket(lineStr, column):
             return False                                    # operator->()
         return True
     pass
+
 #
 # TODO Probably decorators may help to simplify this code ???
 #
