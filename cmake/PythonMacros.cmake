@@ -17,6 +17,8 @@
 #   Mon Jun 11 02:49:02 MSK 2012, by Alex Turbov
 #       Refactoring to support variadic number of source files
 #       Prevent excecution w/ incorrect arguments count
+#       Support for symlinked source files has been added
+#       Generalise work w/ file extensions
 #
 
 get_filename_component(PYTHON_MACROS_MODULE_PATH ${CMAKE_CURRENT_LIST_FILE} PATH)
@@ -57,9 +59,14 @@ macro(python_install DESINATION_DIR)
                 COMMENT "Byte-compiling ${_py_file}"
             )
         else()
+            if(IS_SYMLINK ${_absfilename})
+                set(_copy_cmd ${CMAKE_COMMAND} -E copy ${_absfilename} ${_bin_py})
+            else()
+                set(_copy_cmd ${CMAKE_COMMAND} -E create_symlink ${_absfilename} ${_bin_py})
+            endif()
             add_custom_command(
                 TARGET compile_python_files
-                COMMAND ${CMAKE_COMMAND} -E copy ${_absfilename} ${_bin_py}
+                COMMAND ${_copy_cmd}
                 COMMAND ${PYTHON_EXECUTABLE} ${PYTHON_MACROS_MODULE_PATH}/PythonCompile.py ${_bin_py}
                 DEPENDS ${_absfilename}
                 COMMENT "Byte-compiling ${_py_file}"

@@ -25,11 +25,16 @@ python_install(${CMAKE_INSTALL_PREFIX}/${LIBKATEPATE_DIR} ${LIBKATEPATE_SOURCES}
 set(PLUGIN_SOURCES format.py block.py commentar.py expand/expand.py)
 python_install(${CMAKE_INSTALL_PREFIX} ${PLUGIN_SOURCES})
 
-set(EXPAND_DIR libkatepate)
-set(EXPAND_SOURCES expand/text_x-c++src.expand)
+set(EXPAND_DIR expand)
+set(
+    EXPAND_SOURCES
+    expand/text_x-c++src.expand
+    expand/text_x-c++hdr.expand
+    expand/text_x-chdr.expand
+  )
 python_install(${CMAKE_INSTALL_PREFIX}/${EXPAND_DIR} ${EXPAND_SOURCES})
 
-install(
-    FILES expand/text_x-c++hdr.expand expand/text_x-chdr.expand
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/${EXPAND_DIR}
-  )
+# install(
+#     FILES expand/text_x-c++hdr.expand expand/text_x-chdr.expand
+#     DESTINATION ${CMAKE_INSTALL_PREFIX}/${EXPAND_DIR}
+#   )
