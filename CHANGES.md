@@ -1,7 +1,7 @@
 Version 0.5 (2012-06-10)
 ========================
 
-* setup script provided
+* use cmake to install package files
 * fix cursor positioning after expansion (waiting for movingInterface
   support in next versions of PyKDE4). '\1' replaces with '%{cursor}'
   keyword in expansion text
