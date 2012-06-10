@@ -36,11 +36,11 @@ How to install
 
   To install Pâté plugins system-wide:
 
-    sudo easy_install kate-pate-plugins
+    $ cmake && sudo make install
 
   or
 
-    easy_install kate-pate-plugins --user=~/.kde4/share/apps/kate/pate
+    $ cmake -DINSTALL_TYPE=user && make install
 
   to install into your home directory. Do not forget to enable the Pâté plugin
   in Kate settings.

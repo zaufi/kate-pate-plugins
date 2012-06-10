@@ -1,5 +1,0 @@
-include README.md
-include CHANGES.md
-include *.py
-recursive-include expand *.py
-recursive-include expand *.expand
