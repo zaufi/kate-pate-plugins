@@ -1,68 +1,98 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#
+# Expansions in this file:
+#
+#   cl(name[, T0[, T1[, ...[, Tn]]]])
+#       Insert a class definition, possible w/ template parameters
+#
+#
+#   st(name[, T0[, T1[, ...[, Tn]]]])
+#       Insert a structure definition, possible w/ template parameters
+#
+#
+#   t(T0[, T1[, ...[, Tn]]])
+#       Insert a `template <typename T0, ..., typename Tn>' string
+#
+#
+#   brief
+#       Render a Doxygen \brief header
+#
+#
+#   gs(type, member-name[, ref = No])
+#       Insert simple getter/setter implementation for given member and type
+#
+#
+#   main
+#       Insert simple main() function
+#
+#
+#   ns([name[::nested[::name]]])
+#       Insert namespace(s). If name ommited anonymous namespace will be rendered.
+#
+#
+
 
 from libkatepate import ui
 
-def main():
-    return \
-'''int main(int argc, const char* const argv[])
-{
-    %{cursor}
-    return 0;
-}
-'''
-
-def fori(count):
-    return 'for (int i = 0; i < ' + count + '; ++i)\n    ${cursor}'
-
-def fore(typename, name):
-    template = \
-'''for (
-    {0}::const_iterator it = {1}.begin()
-  , last = {1}.end()
-  ; it != last
-  ; ++it
-  )
+_BRIEF_DOC_TPL = '''
+/**
+ * \\brief Class \c {0}
+ */'''
+_TEMPLATE_PARAMS_TPL = '''
+template <{1}>'''
+_CLASS_BODY_TPL = '''
+class {0}
 {{
-    %{{cursor}}
-}}
+public:
+    /// Default constructor
+    %{{cursor}}explicit {0}()
+    {{
+    }}
+    /// Destructor
+    virtual ~{0}()
+    {{
+    }}
+}};
 '''
-    return template.format(typename, name)
+_STRUCT_BODY_TPL = '''
+struct {0}
+{{
+}};
+'''
+
+_NS_TPL = '''namespace {0} {{
+%{{cursor}}
+{1}{2}// namespace {3}
+'''
+
+_ANONYMOUS_NS_TPL = '''namespace {{
+%{{cursor}}
+}}                                                           // anonymous namespace
+'''
+
 
 def st(name, *templateParams):
     ''' Insert a structure definition
 
         A first mandatory parameter is a structure name.
         Everything after that will be template parameters.
-        Template parameter declaration may contain a default value:
-          st(foo, T, U = T, V = int)
+          st(foo, T, U, V)
 
         will expand into:
-          template <typename T, typename U = T, typename V = int>
+          template <typename T, typename U, typename V>
           struct foo
           {
           };
     '''
+    params = [name]
     if len(templateParams):
-        template = \
-'''/**
- * \\brief {0}
- */
-template <{1}>
-struct {0}
-{{
-}};
-'''
-        return template.format(name, 'typename ' + ', typename '.join(templateParams))
-    template = \
-'''/**
- * \\brief {0}
- */
-struct {0}
-{{
-}};
-'''
-    return template.format(name)
+        template = _BRIEF_DOC_TPL + _TEMPLATE_PARAMS_TPL + _STRUCT_BODY_TPL
+        params.append('typename ' + ', typename '.join(templateParams))
+    else:
+        template = _BRIEF_DOC_TPL + _STRUCT_BODY_TPL
+    return template.format(*params)
+
 
 def cl(name, *templateParams):
     ''' Insert a class definition
@@ -70,48 +100,28 @@ def cl(name, *templateParams):
         TODO It would be neat to have syntax like this:
             cl(test, T, U, d=v, cc=del, mv=def)
           i.e. define a class 'test' w/ template params T and U,
-          w/ virtual detor, w/ deleted copy ctor/assign and w/
+          w/ virtual dtor, w/ deleted copy ctor/assign and w/
           defaulted move ctor/assign.
 
           Isn't it?
     '''
+    params = [name]
     if len(templateParams):
-        template = \
-'''/**
- * \\brief {0}
- */
-template <{1}>
-class {0}
-{{
-    %{{cursor}}explicit {0}()
-    {{
-    }}
-    virtual ~{0}()
-    {{
-    }}
-}};
-'''
-        return template.format(name, 'typename ' + ', typename '.join(templateParams))
-    template = \
-'''/**
- * \\brief {0}
- */
-class {0}
-{{
-    %{{cursor}}explicit {0}()
-    {{
-    }}
-    virtual ~{0}()
-    {{
-    }}
-}};
-'''
-    return template.format(name)
+        template = _BRIEF_DOC_TPL + _TEMPLATE_PARAMS_TPL + _CLASS_BODY_TPL
+        params.append('typename ' + ', typename '.join(templateParams))
+    else:
+        template = _BRIEF_DOC_TPL + _CLASS_BODY_TPL
+    return template.format(*params)
 
-def t():
-    return 'template <typename T>'
+
+def t(*params):
+    '''Render template header w/ given template parameters list
+    '''
+    return 'template <typename ' + ', typename '.join(params) + '>'
 
 def brief():
+    ''' Render a Doxygen brief header
+    '''
     return \
 '''/**
  * \\brief %{cursor}
@@ -121,36 +131,23 @@ def brief():
 def ns(name = None):
     ''' Insert named or anonymous namespace
     '''
+    params = []
     if bool(name):
-        nsList = name.split('::')
-        if len(nsList) > 1:
-            nsOpen = ''
-            nsReverseNames = ''
-            for ns in nsList:
-                nsOpen += 'namespace ' + ns + ' { '
-                if bool(nsReverseNames):
-                    nsReverseNames = ns + ', ' + nsReverseNames
-                else:
-                    nsReverseNames = ns
-            nsReverseNames = '}' * len(nsList) + ' ' * (60 - len(nsList)) + '// namespace ' + nsReverseNames
-            return nsOpen + '\n\n' + nsReverseNames + '\n'
-        else:
-            template = \
-'''namespace {0} {{
-%{{cursor}}
-}}                                                           // namespace {0}
-'''
+        nsList = [ns.strip() for ns in name.split('::')]
+        params.append(' { namespace '.join(nsList))         # NS header
+        params.append('}' * len(nsList))                    # NS close curve brackets
+        params.append(' ' * (60 - len(nsList)))             # space padding before comment
+        params.append(', '.join(reversed(nsList)))          # NS close comment line
+        template = _NS_TPL
     else:
-        name = 'anonymous'
-        template = \
-'''namespace {{
-%{{cursor}}
-}}                                                           // {0} namespace
-'''
-    return template.format(name)
+        template = _ANONYMOUS_NS_TPL
+    return template.format(*params)
 
 def gs(typeT, name, ref = None):
-    ''' Insert getter/setter for mem
+    ''' Insert getter/setter for member
+
+        NOTE If member has a one of "standard" prefix 'm_' or suffix '_',
+            accessor name will be w/o it!
     '''
     template = \
 '''{0} {1}() const
@@ -175,3 +172,12 @@ void {1}({0} value)
         pure_name = name
 
     return template.format(arg, pure_name, name)
+
+def main():
+    return \
+'''int main(int argc, const char* const argv[])
+{
+    %{cursor}
+    return 0;
+}
+'''
