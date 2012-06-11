@@ -59,6 +59,7 @@ import kate
 import kate.gui
 import re
 from PyKDE4.ktexteditor import KTextEditor
+from libkatepate.decorators import cpp_only
 
 
 if 'commentar:comment-position' not in kate.configuration:
@@ -216,7 +217,7 @@ def commentar():
     document = kate.activeDocument()
     view = kate.activeView()
     currentPosition = view.cursorPosition()
-    commentCh = COMMENT_STRING.get(document.highlightingMode(), '#')
+    commentCh = COMMENT_STRING.get(document.highlightingMode(), '# ')
 
     if view.selection():
         selectedText = view.selectionText().split('\n')
@@ -265,12 +266,13 @@ def moveAbove():
     document = kate.activeDocument()
     view = kate.activeView()
     currentPosition = view.cursorPosition()
+    commentCh = COMMENT_STRING.get(document.highlightingMode(), '# ')
 
     if not view.selection():
         insertionText = list()
         line = document.line(currentPosition.line())
         # Split a line before and after a comment
-        (before, comment, after) = str(line).partition('//')
+        (before, comment, after) = str(line).partition(commentCh)
 
         before_ls = before.lstrip()
         column = len(before) - len(before_ls)
@@ -288,9 +290,9 @@ def moveAbove():
                 return
         else:
             # Oops! There is no inline comment... Ok just add new one above.
-            insertionText.append(' ' * column + '// ')
+            insertionText.append(' ' * column + commentCh)
 
-        column += 3 + doxCommentOffset
+        column += len(commentCh) + doxCommentOffset
         insertionText.append(before.rstrip());
 
         # Update the document
@@ -317,13 +319,14 @@ def moveInline():
     document = kate.activeDocument()
     view = kate.activeView()
     currentPosition = view.cursorPosition()
+    commentCh = COMMENT_STRING.get(document.highlightingMode(), '# ')
 
     if not view.selection():
-        insertionText = list()
+        insertionText = []
         currentLine = document.line(currentPosition.line())
         auxLine2Remove = 0
         # Split a line before and after a comment
-        (before, comment, after) = str(currentLine).partition('//')
+        (before, comment, after) = currentLine.partition(commentCh)
 
         # Is there is some text on a line?
         if bool(before.strip()):
@@ -333,7 +336,7 @@ def moveInline():
             if bool(comment):
                 # Aha... the comment is here. Ok. Lets get a line below the current...
                 lineBelow = document.line(currentPosition.line() + 1)
-                (b_before, b_comment, b_after) = str(lineBelow).partition('//')
+                (b_before, b_comment, b_after) = lineBelow.partition(commentCh)
                 auxLine2Remove = 1
                 # Check for text and comment in it...
                 if bool(b_before.strip()):
@@ -353,7 +356,7 @@ def moveInline():
                             if after[0:2] == '/ ':
                                 after = '/< ' + after[2:]
                                 doxCommentOffset = 2
-                            insertionText.append(b_before_s + ' ' * (COMMENT_POS - len(b_before_s)) + '//' + after.rstrip())
+                            insertionText.append(b_before_s + ' ' * (COMMENT_POS - len(b_before_s)) + commentCh + after.rstrip())
                             column = COMMENT_POS + 3 + doxCommentOffset
                 else:
                     # No text on the line below! Dunno what damn user wants...
@@ -380,6 +383,7 @@ def moveInline():
 
 
 @kate.action('Comment Block w/ `#if0`', shortcut='Meta+D', menu='Edit')
+@cpp_only
 def commentBlock():
     view = kate.activeView()
 
@@ -404,6 +408,7 @@ def commentBlock():
 
 
 @kate.action('Toggle `#if0/#if1` Block', shortcut='Meta+Shift+D', menu='Edit')
+@cpp_only
 def toggleBlock():
     document = kate.activeDocument()
     view = kate.activeView()
@@ -434,6 +439,7 @@ def toggleBlock():
 
 
 @kate.action('Remove `#if 0` Block', shortcut='Meta+R', menu='Edit')
+@cpp_only
 def removeBlock():
     document = kate.activeDocument()
     view = kate.activeView()
@@ -477,6 +483,7 @@ def removeBlock():
 
 
 @kate.action('Select Current Block', shortcut='Meta+S', menu='Edit')
+@cpp_only
 def selectBlock():
     document = kate.activeDocument()
     view = kate.activeView()
@@ -600,6 +607,7 @@ def turnFromBlockComment():
 
 
 @kate.action('Transform Doxygen Comments', shortcut='Meta+X', menu='Edit')
+@cpp_only
 def toggleDoxyComment():
     document = kate.activeDocument()
     view = kate.activeView()
