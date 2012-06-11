@@ -61,7 +61,13 @@ set(CMAKE_INSTALL_PREFIX "${KDE4_DATA_DIR}/kate/pate")
 include(PythonMacros)
 
 set(LIBKATEPATE_DIR libkatepate)
-set(LIBKATEPATE_SOURCES ${LIBKATEPATE_DIR}/__init__.py ${LIBKATEPATE_DIR}/ui.py)
+set(
+    LIBKATEPATE_SOURCES
+    ${LIBKATEPATE_DIR}/__init__.py
+    ${LIBKATEPATE_DIR}/common.py
+    ${LIBKATEPATE_DIR}/decorators.py
+    ${LIBKATEPATE_DIR}/ui.py
+    )
 python_install(${CMAKE_INSTALL_PREFIX}/${LIBKATEPATE_DIR} ${LIBKATEPATE_SOURCES})
 
 set(PLUGIN_SOURCES format.py block.py commentar.py expand/expand.py)

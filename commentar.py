@@ -58,8 +58,10 @@
 import kate
 import kate.gui
 import re
+# TODO Is it really bad to import in such way? (even here?)
 from PyKDE4.ktexteditor import KTextEditor
-from libkatepate.decorators import cpp_only
+from libkatepate.decorators import restrict_doc_type, check_constraints, comment_char_must_be_known
+from libkatepate.common import getCommentStyleForDoc
 
 
 if 'commentar:comment-position' not in kate.configuration:
@@ -75,16 +77,11 @@ BLOCK_ELSE_SEARCH_RE = re.compile('^\s*#\s*else.*$')
 BLOCK_END_SEARCH_RE = re.compile('^\s*#\s*endif.*$')
 BLOCK_ELSE_ENDIF_MATCH_RE = re.compile('^\s*#\s*(endif|else).*$')
 BLOCK_START_GET_COND_RE = re.compile('^\s*#\s*(if((n)?def)?)\s+(.*)\s*$')
-COMMENT_STRING = {
-    'Python' : '# '
-  , 'CMake'  : '# '
-  , 'Bash'   : '# '
-  , 'C++'    : '//'
-}
 
 
 def isApplicableMime():
     return str(kate.activeDocument().mimeType()).find('c++') != -1
+
 
 def insertTextBlock(document, line, text):
     """Put lines from a list into the current position (line) in a document
@@ -93,6 +90,7 @@ def insertTextBlock(document, line, text):
         for l in text:
             document.insertLine(line, l)
             line += 1
+
 
 #
 # Build a list of tuples (start, end, elseif, is_comment) for all #if/#elseif/#endif blocks
@@ -131,6 +129,7 @@ def buildIfEndifMap(document):
 
     return blockRanges
 
+
 def locateBlock(currentLine, blockRanges, ignoreComments = False):
     """Find an index of a current block
 
@@ -150,6 +149,7 @@ def locateBlock(currentLine, blockRanges, ignoreComments = False):
         c += 1
     return idx;
 
+
 def processLine(line, commentCh):
     result = []
     column = COMMENT_POS
@@ -167,6 +167,9 @@ def processLine(line, commentCh):
             else:
                 # Move comment to the line above
                 column = len(before) - len(before.lstrip())
+                # NOTE Try to fix Doxygen comment on the fly: '///<' or '//!<' --> '///'
+                if after[1] == '<' and (after[0] == '!' or after[0] == '/'):
+                    after = '/' + after[2:]
                 result.append(' ' * column + commentCh + after.rstrip())
                 result.append(before_s)
         else:
@@ -208,7 +211,10 @@ def processLine(line, commentCh):
             result.append(' ' * COMMENT_POS + commentCh + ' ')
     return (result, column + len(commentCh) + 1)
 
+
 @kate.action('Inline Comment', shortcut='Alt+D', menu='Edit')
+@check_constraints
+@comment_char_must_be_known()
 def commentar():
     """Append or align an inlined comment to COMMENT_POS for the current line or the selection.
 
@@ -217,7 +223,7 @@ def commentar():
     document = kate.activeDocument()
     view = kate.activeView()
     currentPosition = view.cursorPosition()
-    commentCh = COMMENT_STRING.get(document.highlightingMode(), '# ')
+    commentCh = getCommentStyleForDoc(document)
 
     if view.selection():
         selectedText = view.selectionText().split('\n')
@@ -260,13 +266,15 @@ def commentar():
 
 
 @kate.action('Move Comment Above', shortcut='Meta+Left')
+@check_constraints
+@comment_char_must_be_known()
 def moveAbove():
     """Move inlined comment before the current line at same align
     """
     document = kate.activeDocument()
     view = kate.activeView()
     currentPosition = view.cursorPosition()
-    commentCh = COMMENT_STRING.get(document.highlightingMode(), '# ')
+    commentCh = getCommentStyleForDoc(document)
 
     if not view.selection():
         insertionText = list()
@@ -315,11 +323,13 @@ def moveAbove():
 # (if line below still has no one)
 #
 @kate.action('Move Comment Inline', shortcut='Meta+Right')
+@check_constraints
+@comment_char_must_be_known()
 def moveInline():
     document = kate.activeDocument()
     view = kate.activeView()
     currentPosition = view.cursorPosition()
-    commentCh = COMMENT_STRING.get(document.highlightingMode(), '# ')
+    commentCh = getCommentStyleForDoc(document)
 
     if not view.selection():
         insertionText = []
@@ -328,7 +338,7 @@ def moveInline():
         # Split a line before and after a comment
         (before, comment, after) = currentLine.partition(commentCh)
 
-        # Is there is some text on a line?
+        # Is there some text on a line?
         if bool(before.strip()):
             return                                          # Aha... move cursor co comment u stupid bastard!
         else:
@@ -383,7 +393,8 @@ def moveInline():
 
 
 @kate.action('Comment Block w/ `#if0`', shortcut='Meta+D', menu='Edit')
-@cpp_only
+@check_constraints
+@restrict_doc_type('C++')
 def commentBlock():
     view = kate.activeView()
 
@@ -408,7 +419,8 @@ def commentBlock():
 
 
 @kate.action('Toggle `#if0/#if1` Block', shortcut='Meta+Shift+D', menu='Edit')
-@cpp_only
+@check_constraints
+@restrict_doc_type('C++')
 def toggleBlock():
     document = kate.activeDocument()
     view = kate.activeView()
@@ -439,7 +451,8 @@ def toggleBlock():
 
 
 @kate.action('Remove `#if 0` Block', shortcut='Meta+R', menu='Edit')
-@cpp_only
+@check_constraints
+@restrict_doc_type('C++')
 def removeBlock():
     document = kate.activeDocument()
     view = kate.activeView()
@@ -483,7 +496,8 @@ def removeBlock():
 
 
 @kate.action('Select Current Block', shortcut='Meta+S', menu='Edit')
-@cpp_only
+@check_constraints
+@restrict_doc_type('C++')
 def selectBlock():
     document = kate.activeDocument()
     view = kate.activeView()
@@ -607,7 +621,8 @@ def turnFromBlockComment():
 
 
 @kate.action('Transform Doxygen Comments', shortcut='Meta+X', menu='Edit')
-@cpp_only
+@check_constraints
+@restrict_doc_type('C++')
 def toggleDoxyComment():
     document = kate.activeDocument()
     view = kate.activeView()

@@ -302,11 +302,15 @@ def boostFormat():
     try:
         r, nestedRanges, breakPositions = getRangeTopology(',')
     except LookupError as error:
-        ui.popup("Failed to parse C++ expression", str(error))
+        ui.popup("Failed to parse C++ expression", str(error), "face-sad")
         return
 
     if r.isEmpty():                                         # Is range empty?
-        ui.popup("Failed to parse C++ expression", "Didn't found anything to format. Sorry ;-(")
+        ui.popup(
+            "Failed to parse C++ expression"
+          , "Didn't found anything to format. Sorry..."
+          , "face-sad"
+          )
         return                                              # Nothing interesting wasn't found...
 
     # Rescan the range w/ ';' as breaker added if current range is a `for` statement
@@ -314,7 +318,7 @@ def boostFormat():
         try:
             r, nestedRanges, breakPositions = getRangeTopology(',;')
         except LookupError as error:
-            ui.popup("Failed to parse C++ expression", str(error))
+            ui.popup("Failed to parse C++ expression", str(error), "face-sad")
             return
 
     # Going to format a text whithin a selected range
@@ -350,11 +354,15 @@ def boostFormat():
     try:
         r, nestedRanges, breakPositions = getRangeTopology(',')
     except LookupError as error:
-        ui.popup("Failed to parse C++ expression", str(error))
+        ui.popup("Failed to parse C++ expression", str(error), "face-sad")
         return
 
     if r.isEmpty():                                         # Is range empty?
-        ui.popup("Failed to parse C++ expression", "Didn't found anything to format. Sorry ;-(")
+        ui.popup(
+            "Failed to parse C++ expression"
+          , "Didn't found anything to format. Sorry"
+          , "face-sad"
+          )
         return                                              # Nothing interesting wasn't found...
 
     # Rescan the range w/ ';' as breaker added if current range is a `for` statement
@@ -362,7 +370,7 @@ def boostFormat():
         try:
             r, nestedRanges, breakPositions = getRangeTopology(',;')
         except LookupError as error:
-            ui.popup("Failed to parse C++ expression", str(error))
+            ui.popup("Failed to parse C++ expression", str(error), "face-sad")
             return
 
     # Going to unformat a text whithin a selected range

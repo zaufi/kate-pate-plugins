@@ -17,22 +17,24 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-''' Reusable code for Kate/Pâté plugins: UI elements '''
+''' Reusable code for Kate/Pâté plugins: general purpose shared code '''
 
 import kate
 
-from PyKDE4.kdeui import KPassivePopup, KIcon
+_COMMENT_STRINGS_MAP = {
+    'Python' : '# '
+  , 'Perl'   : '# '
+  , 'CMake'  : '# '
+  , 'Bash'   : '# '
+  , 'C++'    : '//'
+}
 
-from PyQt4 import QtCore
-from PyQt4.QtCore import QSize
 
+def isKnownCommentStyle(docType):
+    ''' Check if we know how to comment a line in a given document type '''
+    return docType in _COMMENT_STRINGS_MAP
 
-def popup(caption, text, iconName = None, iconSize = 16):
-    ''' Show passive popup using native KDE API
-    '''
-    parentWidget = kate.mainWindow()
-    if iconName:
-        icon = KIcon (iconName).pixmap(QSize(iconSize, iconSize))
-        KPassivePopup.message(caption, text, icon, parentWidget)
-    else:
-        KPassivePopup.message(caption, text, parentWidget)
+def getCommentStyleForDoc(document):
+    ''' Get single line comment string for a document '''
+    assert(document.highlightingMode() in _COMMENT_STRINGS_MAP)
+    return _COMMENT_STRINGS_MAP[document.highlightingMode()]
