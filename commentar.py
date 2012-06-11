@@ -74,6 +74,12 @@ BLOCK_ELSE_SEARCH_RE = re.compile('^\s*#\s*else.*$')
 BLOCK_END_SEARCH_RE = re.compile('^\s*#\s*endif.*$')
 BLOCK_ELSE_ENDIF_MATCH_RE = re.compile('^\s*#\s*(endif|else).*$')
 BLOCK_START_GET_COND_RE = re.compile('^\s*#\s*(if((n)?def)?)\s+(.*)\s*$')
+COMMENT_STRING = {
+    'Python' : '# '
+  , 'CMake'  : '# '
+  , 'Bash'   : '# '
+  , 'C++'    : '//'
+}
 
 
 def isApplicableMime():
@@ -143,11 +149,11 @@ def locateBlock(currentLine, blockRanges, ignoreComments = False):
         c += 1
     return idx;
 
-def processLine(line):
-    result = list()
+def processLine(line, commentCh):
+    result = []
     column = COMMENT_POS
     # Split line before and after a comment
-    (before, comment, after) = str(line).partition('//')
+    (before, comment, after) = line.partition(commentCh)
     before_s = before.rstrip()
     # Is there a comment on a line?
     if bool(comment):
@@ -156,18 +162,18 @@ def processLine(line):
             # Yes! Is text before not longer than desired comment position
             if len(before_s) < (COMMENT_POS + 1):
                 # Yep, just reformat the line...
-                result.append(before_s + (' ' * (COMMENT_POS - len(before_s))) + '//' + after.rstrip())
+                result.append(before_s + (' ' * (COMMENT_POS - len(before_s))) + commentCh + after.rstrip())
             else:
                 # Move comment to the line above
                 column = len(before) - len(before.lstrip())
-                result.append(' ' * column + '//' + after.rstrip())
+                result.append(' ' * column + commentCh + after.rstrip())
                 result.append(before_s)
         else:
             # No! The line contains only whitespaces...
             # Is comment after or 'close before' to inline comment position?
             if len(before) > COMMENT_THRESHOLD:
                 # Align comment to desired position...
-                result.append(' ' * COMMENT_POS + '//' + after.rstrip())
+                result.append(' ' * COMMENT_POS + commentCh + after.rstrip())
             else:
                 # TODO Align comment to closest to div 4 position...
                 result.append(line.rstrip())
@@ -177,10 +183,10 @@ def processLine(line):
             # Is it longer that inline comment position?
             if len(before_s) > (COMMENT_POS):
                 column = len(before) - len(before.lstrip())
-                result.append(' ' * column + '// ')
+                result.append(' ' * column + commentCh + ' ')
                 result.append(before_s)
             else:
-                result.append(before_s + ' ' * (COMMENT_POS - len(before_s)) + '// ')
+                result.append(before_s + ' ' * (COMMENT_POS - len(before_s)) + commentCh + ' ')
             # Check for preprocessor directives #else/#endif and try to append
             # corresponding #if condition as a comment for current line
             if bool(BLOCK_ELSE_ENDIF_MATCH_RE.search(before_s)):
@@ -198,28 +204,28 @@ def processLine(line):
                         result[-1] += matchObj.group(4)
         else:
             # No text! Just add a comment...
-            result.append(' ' * COMMENT_POS + '// ')
-    return (result, column + 3)
+            result.append(' ' * COMMENT_POS + commentCh + ' ')
+    return (result, column + len(commentCh) + 1)
 
 @kate.action('Inline Comment', shortcut='Alt+D', menu='Edit')
 def commentar():
     """Append or align an inlined comment to COMMENT_POS for the current line or the selection.
 
-        Move cursor to a start of comment, if nothing has changed.
+        Move cursor to the start of a comment, if nothing has changed.
     """
     document = kate.activeDocument()
     view = kate.activeView()
     currentPosition = view.cursorPosition()
+    commentCh = COMMENT_STRING.get(document.highlightingMode(), '#')
 
     if view.selection():
-        selectedText = str(view.selectionText()).split('\n')
+        selectedText = view.selectionText().split('\n')
         if not bool(selectedText[len(selectedText) - 1]):
-            # TODO Is there any better way to remove last item??
-            selectedText = selectedText[0:len(selectedText) - 1]
-        insertionText = list()
+            selectedText = selectedText[0:-1]
+        insertionText = []
         firstColumn = -1
         for textLine in selectedText:
-            (currentLine, column) = processLine(textLine)
+            (currentLine, column) = processLine(textLine, commentCh)
             if firstColumn == -1:
                 firstColumn = column
             insertionText += currentLine
@@ -236,7 +242,7 @@ def commentar():
             document.endEditing()
 
     else:
-        (text, column) = processLine(document.line(currentPosition.line()))
+        (text, column) = processLine(document.line(currentPosition.line()), commentCh)
 
         # Apply result (if smth really has changed)
         originalText = document.line(currentPosition.line())
