@@ -394,7 +394,7 @@ def moveInline():
 
 @kate.action('Comment Block w/ `#if0`', shortcut='Meta+D', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++')
+@restrict_doc_type('C++', 'C')
 def commentBlock():
     view = kate.activeView()
 
@@ -420,7 +420,7 @@ def commentBlock():
 
 @kate.action('Toggle `#if0/#if1` Block', shortcut='Meta+Shift+D', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++')
+@restrict_doc_type('C++', 'C')
 def toggleBlock():
     document = kate.activeDocument()
     view = kate.activeView()
@@ -450,9 +450,9 @@ def toggleBlock():
         document.endEditing()                                   # End transaction
 
 
-@kate.action('Remove `#if 0` Block', shortcut='Meta+R', menu='Edit')
+@kate.action('Remove `#if0` Block', shortcut='Meta+R', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++')
+@restrict_doc_type('C++', 'C')
 def removeBlock():
     document = kate.activeDocument()
     view = kate.activeView()
@@ -495,9 +495,9 @@ def removeBlock():
         document.endEditing()                                   # End transaction
 
 
-@kate.action('Select Current Block', shortcut='Meta+S', menu='Edit')
+@kate.action('Select Current `#if0/#if1` Block', shortcut='Meta+S', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++')
+@restrict_doc_type('C++', 'C')
 def selectBlock():
     document = kate.activeDocument()
     view = kate.activeView()

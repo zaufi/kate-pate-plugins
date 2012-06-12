@@ -17,7 +17,7 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-''' Reusable code for Kate/Pâté plugins: C++ document types related common code '''
+''' Reusable code for Kate/Pâté plugins: decorators for actions '''
 
 import functools
 import kate
@@ -45,21 +45,22 @@ def check_constraints(action):
     return checker
 
 
-def restrict_doc_type(docType):
+def restrict_doc_type(*doc_types):
     def restrict_doc_type_decorator(action):
         # TODO Investgate required why in opposite params order
         # keyword arguments can't pass through `partial` binder
         # WTF?? WTF!!
-        def doc_type_checker(doc_type, document):
-            if document.highlightingMode() != doc_type:
+        def doc_type_checker(doc_types, document):
+            doc_type = document.highlightingMode()
+            if doc_type not in doc_types:
                 ui.popup(
                     "Alert"
-                  , "This action have sense <b>only</b> for " + doc_type + " documents!"
+                  , "This action have no sense for " + doc_type + " documents!"
                   , "face-wink"
                   )
                 return False
             return True
-        binded_predicate = functools.partial(doc_type_checker, docType)
+        binded_predicate = functools.partial(doc_type_checker, doc_types)
         append_constraint(action, binded_predicate)
         return action
     return restrict_doc_type_decorator
