@@ -36,11 +36,11 @@ How to install
 
   To install Pâté plugins system-wide:
 
-    $ cmake && sudo make install
+    $ cmake . && sudo make install
 
   or
 
-    $ cmake -DINSTALL_TYPE=user && make install
+    $ cmake -DINSTALL_TYPE=user . && make install
 
   to install into your home directory. Do not forget to enable the Pâté plugin
   in Kate settings.
