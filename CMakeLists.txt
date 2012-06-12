@@ -81,3 +81,42 @@ set(
     expand/text_x-chdr.expand
   )
 python_install(${CMAKE_INSTALL_PREFIX}/${EXPAND_DIR} ${EXPAND_SOURCES})
+
+
+#---------------------------------------------------------
+# Section: Configure package options
+#---------------------------------------------------------
+
+set(VERSION_MAJOR 0)
+set(VERSION_MINOR 5)
+set(VERSION_PATCH 0)
+set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+
+# CPack version numbers for release tarball name.
+set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${VERSION_PATCH})
+
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Kate/Pâté plugins (mostly for C++)")
+set(CPACK_PACKAGE_VENDOR "Alex Turbov")
+set(CPACK_PACKAGE_DESCRIPTION_FILE ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+set(CPACK_GENERATOR TGZ)
+
+set(
+    CPACK_SOURCE_PACKAGE_FILE_NAME
+    "kate-pate-plugins-${VERSION_STRING}"
+    CACHE INTERNAL "tarball basename"
+  )
+set(CPACK_SOURCE_GENERATOR TGZ)
+# The following components are regex's to match anywhere (unless anchored)
+# in absolute path + filename to find files or directories to be excluded
+# from source tarball.
+set(CPACK_SOURCE_IGNORE_FILES
+    "\\\\.gitignore$"
+    "\\\\.kate-swp$"
+    "\\\\.pyc$"
+    "\\\\.tar\\\\.gz$"
+    "\\\\.expandc$"
+    "^.*/\\\\.git.*$"
+  )
+include(CPack)
