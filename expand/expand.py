@@ -310,8 +310,8 @@ def expandAtCursor():
             else:
                 insertPosition.setLine(insertPosition.line() + 1)
                 cursorAdvancement -= currentLength + 1      # NOTE +1 for every \n char
-        insertPosition.setColumn(cursorAdvancement)
+        insertPosition.setColumn(insertPosition.column() + cursorAdvancement)
         view.setCursorPosition(insertPosition)
 
 
-# kate: space-indent on;
+# kate: space-indent on; hl python;

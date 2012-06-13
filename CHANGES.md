@@ -13,6 +13,8 @@ Version 0.5 (2012-06-10)
 * use decorators to disable (show popup w/ alert) actions by various constraints,
   for example commenting text block w/ `#if 0' have sense only for C/C++
   documents
+* make some comment manipulation actions to work w/ other than C/C++ source code
+  (CMake, Python, Perl, Bash)
 
 Version 0.4 (2012-06-04)
 ========================
