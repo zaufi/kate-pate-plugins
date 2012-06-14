@@ -67,10 +67,17 @@ set(
     ${LIBKATEPATE_DIR}/common.py
     ${LIBKATEPATE_DIR}/decorators.py
     ${LIBKATEPATE_DIR}/ui.py
-    )
+  )
 python_install(${CMAKE_INSTALL_PREFIX}/${LIBKATEPATE_DIR} ${LIBKATEPATE_SOURCES})
 
-set(PLUGIN_SOURCES format.py block.py commentar.py expand/expand.py)
+set(
+    PLUGIN_SOURCES
+    block.py
+    commentar.py
+    expand/expand.py
+    format.py
+    tools.py
+  )
 python_install(${CMAKE_INSTALL_PREFIX} ${PLUGIN_SOURCES})
 
 set(EXPAND_DIR expand)
@@ -89,7 +96,7 @@ python_install(${CMAKE_INSTALL_PREFIX}/${EXPAND_DIR} ${EXPAND_SOURCES})
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 5)
-set(VERSION_PATCH 0)
+set(VERSION_PATCH 1)
 set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 # CPack version numbers for release tarball name.
@@ -120,3 +127,5 @@ set(CPACK_SOURCE_IGNORE_FILES
     "^.*/\\\\.git.*$"
   )
 include(CPack)
+
+# kate: hl cmake;

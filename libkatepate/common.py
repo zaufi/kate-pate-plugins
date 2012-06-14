@@ -21,6 +21,8 @@
 
 import kate
 
+from PyKDE4.ktexteditor import KTextEditor
+
 _COMMENT_STRINGS_MAP = {
     'Python' : '# '
   , 'Perl'   : '# '
@@ -34,7 +36,38 @@ def isKnownCommentStyle(docType):
     ''' Check if we know how to comment a line in a given document type '''
     return docType in _COMMENT_STRINGS_MAP
 
-def getCommentStyleForDoc(document):
+
+def getCommentStyleForDoc(doc):
     ''' Get single line comment string for a document '''
-    assert(document.highlightingMode() in _COMMENT_STRINGS_MAP)
-    return _COMMENT_STRINGS_MAP[document.highlightingMode()]
+    assert(doc.highlightingMode() in _COMMENT_STRINGS_MAP)
+    return _COMMENT_STRINGS_MAP[doc.highlightingMode()]
+
+
+def getBoundTextRangeSL(leftBoundary, rightBoundary, pos, doc):
+    ''' Get the range between any symbol specified in leftBoundary set and rightBoundary
+
+        Search starts from given cursor position...
+        NOTE `SL' suffix means Single Line -- i.e. when search, do not cross one line boundaries!
+    '''
+    if not doc.lineLength(pos.line()):
+        return KTextEditor.Range(pos, pos)
+
+    lineStr = doc.line(pos.line())                          # Get the current line as string to analyse
+    found = False
+    for cc in range(pos.column(), -1, -1):                  # Moving towards line start
+        found = lineStr[cc] in leftBoundary                 # Check the current char for left boundary terminators
+        if found:
+            break                                           # Break the loop if found smth
+
+    startPos = KTextEditor.Cursor(pos.line(), cc + int(found))
+
+    found = False
+    for cc in range(pos.column(), len(lineStr)):            # Moving towards line end
+        found = lineStr[cc] in rightBoundary                # Check the current char for right boundary terminators
+        if found:
+            break                                           # Break the loop if found smth
+
+    endPos = KTextEditor.Cursor(pos.line(), cc + int(not found))
+
+    return KTextEditor.Range(startPos, endPos)
+

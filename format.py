@@ -195,7 +195,7 @@ def getRangeTopology(breakChars):
             if lineStr[cc] == ')':
                 if len(stack):
                     print("c) Pop position: " + str(stack[-1]))
-                    nrl, nrc, isT = stack.pop()             # remove last position from stack
+                    nrl, nrc, isT = stack.pop()             # remove a last position from the stack
                     if not isT:
                         nestedRanges.append(                # and append a nested range
                             KTextEditor.Range(nrl, nrc, cl, cc)
@@ -206,7 +206,7 @@ def getRangeTopology(breakChars):
                             " and ')' @ " + str(cl + 1) + ',' + str(cc + 1)
                           )
                 else:
-                    closePos = (cl, cc, False)
+                    closePos = (cl, cc, False)              # remember the range end
                     print("c) Found position: " + str(closePos))
                     found = True
                     break
@@ -235,7 +235,7 @@ def getRangeTopology(breakChars):
                             " and '>' @ " + str(cl + 1) + ',' + str(cc + 1)
                           )
                 else:
-                    closePos = (cl, cc, True)               # remember range start (exclude an open char)
+                    closePos = (cl, cc, True)               # remember the range end
                     print("c> Found position: " + str(closePos))
                     found = True
                     break

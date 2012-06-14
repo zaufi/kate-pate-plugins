@@ -1,5 +1,11 @@
-Version 0.5 (2012-06-10)
-========================
+Version 0.5.1 (2012-06-14)
+==========================
+
+* color chooser plugin
+
+
+Version 0.5.0 (2012-06-10)
+==========================
 
 * use cmake to install package files
 * fix cursor positioning after expansion (waiting for movingInterface
@@ -16,7 +22,8 @@ Version 0.5 (2012-06-10)
 * make some comment manipulation actions to work w/ other than C/C++ source code
   (CMake, Python, Perl, Bash)
 
-Version 0.4 (2012-06-04)
-========================
+
+Version 0.4.0 (2012-06-04)
+==========================
 
 * boost-like functions/templates parameters list (un)formatter
