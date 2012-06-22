@@ -262,15 +262,11 @@ def expandAtCursor():
         kate.gui.popup('<p style="white-space:pre">%s</p>' % s, icon='dialog-error', timeout=5, maxTextWidth=None, minTextWidth=300)
         return
 
-    try:
-        replacement = unicode(replacement)
-    except UnicodeEncodeError:
-        replacement = repr(replacement)
     #KateDocumentConfig::cfReplaceTabsDyn
     indentCharacters = indentationCharacters(document)
     # convert newlines followed by tab characters to whatever spacing
     # the user... uses.
-    for i in xrange(100):
+    for i in range(100):
         if '\n' + (indentCharacters * i) + '\t' in replacement:
             replacement = replacement.replace('\n' + (indentCharacters * i) + '\t', '\n' + (indentCharacters * (i + 1)))
     insertPosition = word_range.start()
@@ -284,7 +280,7 @@ def expandAtCursor():
         else:
             break
     replacement = replacement.replace('\n', '\n' + whitespace)
-    # cursor position set?
+    # is desired cursor position set?
     cursorAdvancement = None
     if '%{cursor}' in replacement:
         cursorAdvancement = replacement.index('%{cursor}')

@@ -22,43 +22,56 @@
 #       Insert simple getter/setter implementation for given member and type
 #
 #
-#   main
-#       Insert simple main() function
+#   main([args=True])
+#       Insert simple main() function.
 #
 #
 #   ns([name[::nested[::name]]])
 #       Insert namespace(s). If name ommited anonymous namespace will be rendered.
 #
 #
+#   sw(expr[, case1[, case2[, ..., caseN]]])
+#       Render switch statement w/ a given expression and possible cases.
+#       If caseX == 'd' or 'default' --> render `default: break;' instead of case,
+#       so its better to put 'd' at the end of parameters list.
+#
 
 
 from libkatepate import ui
 
-_BRIEF_DOC_TPL = '''
-/**
+_BRIEF_DOC_TPL = \
+'''/**
  * \\brief Class \c {0}
  */'''
+
 _TEMPLATE_PARAMS_TPL = '''
 template <{1}>'''
+
 _CLASS_BODY_TPL = '''
 class {0}
 {{
 public:
-    /// Default constructor
-    %{{cursor}}explicit {0}()
-    {{
-    }}
-    /// Destructor
-    virtual ~{0}()
-    {{
-    }}
+\t/// Default constructor
+\t%{{cursor}}explicit {0}()
+\t{{
+\t}}
+\t/// Destructor
+\tvirtual ~{0}()
+\t{{
+\t}}
 }};
 '''
+
 _STRUCT_BODY_TPL = '''
 struct {0}
 {{
 }};
 '''
+
+_PURE_BRIEF_DOC_TPL = '''/**
+ * \\brief %{cursor}
+ *
+ */'''
 
 _NS_TPL = '''namespace {0} {{
 %{{cursor}}
@@ -69,6 +82,40 @@ _ANONYMOUS_NS_TPL = '''namespace {{
 %{{cursor}}
 }}                                                           // anonymous namespace
 '''
+
+_GET_SET_TPL = '''{0} {1}() const
+{{
+    return {2};
+}}
+void {1}({0} value)
+{{
+    {2} = value;
+}}%{{cursor}}
+'''
+
+_MAIN_WITH_ARGS_TPL = '''int main(int argc, const char* const argv[])
+{
+\t%{cursor}
+\treturn 0;
+}
+'''
+
+_MAIN_TPL = '''int main()
+{
+\treturn 0;
+}'''
+
+_EMPTY_SWITCH_TPL = '''switch (%{cursor})
+{
+\tcase :
+\t\tbreak;
+\tdefault:
+\t\tbreak;
+}'''
+
+_SWITCH_TPL = '''switch ({0})
+{{
+{1}}}'''
 
 
 def st(name, *templateParams):
@@ -122,11 +169,7 @@ def t(*params):
 def brief():
     ''' Render a Doxygen brief header
     '''
-    return \
-'''/**
- * \\brief %{cursor}
- *
- */'''
+    return _PURE_BRIEF_DOC_TPL
 
 
 def ns(name = None):
@@ -151,16 +194,8 @@ def gs(typeT, name, ref = None):
         NOTE If member has a one of "standard" prefix 'm_' or suffix '_',
             accessor name will be w/o it!
     '''
-    template = \
-'''{0} {1}() const
-{{
-    return {2};
-}}
-void {1}({0} value)
-{{
-    {2} = value;
-}}%{{cursor}}
-'''
+    template = _GET_SET_TPL
+
     if ref == None:
         arg = typeT
     else:
@@ -176,13 +211,30 @@ void {1}({0} value)
     return template.format(arg, pure_name, name)
 
 
-def main():
-    return \
-'''int main(int argc, const char* const argv[])
-{
-    %{cursor}
-    return 0;
-}
-'''
+def main(args=True):
+    '''Render main() function'''
+    if args:
+        return _MAIN_WITH_ARGS_TPL
+    return _MAIN_TPL
 
+
+def sw(expr = None, *caseList):
+    ''' Render switch() statement w/ a list of cases'''
+    if expr:
+        if caseList:
+            caseStr = ''
+            for case in caseList:
+                if case == 'd' or case == 'def' or case == 'default':
+                    caseStr += '\tdefault:\n\t\tbreak;\n'
+                else:
+                    caseStr += '\tcase ' + case +':\n\t\tbreak;\n'
+            caseStr += '%{cursor}'
+        else:
+            caseStr = '\tcase :%{cursor}\n\t\tbreak;\n'
+        return _SWITCH_TPL.format(expr, caseStr)
+    else:
+        return _EMPTY_SWITCH_TPL
+
+def test(expr):
+    return '{\n\t%{cursor}' + expr + '\n}'
 # kate: hl python;

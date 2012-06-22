@@ -226,6 +226,15 @@ def commentar():
     commentCh = getCommentStyleForDoc(document)
 
     if view.selection():
+        # If selected smth on a single line...
+        selectedRange = view.selectionRange()
+        if selectedRange.start().line() == selectedRange.end().line():
+            # ... extend selection to whole line, before do smth
+            selectedRange.start().setColumn(0)
+            selectedRange.end().setColumn(0)
+            selectedRange.end().setLine(selectedRange.end().line() + 1)
+            view.setSelection(selectedRange)
+
         selectedText = view.selectionText().split('\n')
         if not bool(selectedText[len(selectedText) - 1]):
             selectedText = selectedText[0:-1]
