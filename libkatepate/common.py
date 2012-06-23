@@ -71,3 +71,34 @@ def getBoundTextRangeSL(leftBoundary, rightBoundary, pos, doc):
 
     return KTextEditor.Range(startPos, endPos)
 
+
+def _getTextBlockAroundCursor(doc, first, last, direction, stopContidions):
+    stop = False
+    while (not stop and first >= 0 and first < last):
+        line = doc.line(first)
+        for predicate in stopContidions:
+            if predicate(line):
+                stop = True
+                break
+        if not stop:
+            first += direction
+
+    return first
+
+
+TOWARDS_START = -1
+TOWARDS_END = 1
+
+def getTextBlockAroundCursor(doc, pos, upPred, downPred):
+    start = _getTextBlockAroundCursor(doc, pos.line(), doc.lines(), TOWARDS_START, upPred)
+    end = _getTextBlockAroundCursor(doc, pos.line(), doc.lines(), TOWARDS_END, downPred)
+    if start != end:
+        start += 1
+
+    print('** getTextBlockAroundCursor[pos=%d,%d]: (%d,%d), (%d,%d)' % (pos.line(), pos.column(), start, 0, end, 0))
+    return KTextEditor.Range(start, 0, end, 0)
+
+
+def getCurrentLineIndentation(view):
+    lineStr = view.document().line(view.cursorPosition().line())
+    return len(lineStr) - len(lineStr.lstrip())

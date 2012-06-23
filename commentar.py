@@ -44,6 +44,9 @@
 #       remove #if0 or #if1 and closing #endif around current code block
 #       leaving #else part as is
 #
+#   Select Current #if0/#if1 Block (Meta+S)
+#       set selection of current (where cursor positioned) #if0/#endif block
+#
 #   Transform Doxygen Comments (Meta+X)
 #       turn block of '///' doxygen comments into
 #       /**
@@ -51,17 +54,27 @@
 #        */
 #       and vise versa
 #
-#   Select Current Block (Meta+S)
-#       set selection of current (where cursor positioned) #if/#endif block
+#   Shrink Comment Paragraph (Meta+[)
+#       shrink a text paragraph width, whithing a comment, around a current cursor position
+#
+#   Extend Comment Paragraph (Meta+])
+#       extend a text paragraph width, whithing a comment, around a current cursor position
+#
 #
 
 import kate
 import kate.gui
 import re
+import textwrap
 # TODO Is it really bad to import in such way? (even here?)
 from PyKDE4.ktexteditor import KTextEditor
+
 from libkatepate.decorators import restrict_doc_type, check_constraints, comment_char_must_be_known
-from libkatepate.common import getCommentStyleForDoc
+from libkatepate.common import getCommentStyleForDoc, getTextBlockAroundCursor, getCurrentLineIndentation
+from libkatepate import ui
+# text processing predicates
+from libkatepate import pred
+from libkatepate.pred import neg, all_of, any_of
 
 
 if 'commentar:comment-position' not in kate.configuration:
@@ -91,6 +104,16 @@ def insertTextBlock(document, line, text):
             document.insertLine(line, l)
             line += 1
 
+
+def extendSelectionToWholeLine(view):
+    selectedRange = view.selectionRange()
+    if not selectedRange.isEmpty():
+        # ... extend selection to whole line, before do smth
+        selectedRange.start().setColumn(0)
+        if selectedRange.end().column() != 0:
+            selectedRange.end().setColumn(0)
+            selectedRange.end().setLine(selectedRange.end().line() + 1)
+        view.setSelection(selectedRange)
 
 #
 # Build a list of tuples (start, end, elseif, is_comment) for all #if/#elseif/#endif blocks
@@ -222,21 +245,15 @@ def commentar():
     """
     document = kate.activeDocument()
     view = kate.activeView()
-    currentPosition = view.cursorPosition()
+    pos = view.cursorPosition()
     commentCh = getCommentStyleForDoc(document)
 
     if view.selection():
         # If selected smth on a single line...
-        selectedRange = view.selectionRange()
-        if selectedRange.start().line() == selectedRange.end().line():
-            # ... extend selection to whole line, before do smth
-            selectedRange.start().setColumn(0)
-            selectedRange.end().setColumn(0)
-            selectedRange.end().setLine(selectedRange.end().line() + 1)
-            view.setSelection(selectedRange)
+        extendSelectionToWholeLine(view)
 
         selectedText = view.selectionText().split('\n')
-        if not bool(selectedText[len(selectedText) - 1]):
+        if not bool(selectedText[-1]):
             selectedText = selectedText[0:-1]
         insertionText = []
         firstColumn = -1
@@ -250,28 +267,28 @@ def commentar():
         if bool(insertionText):
             document.startEditing()
             document.removeText(view.selectionRange())
-            currentPosition = view.cursorPosition()
-            insertTextBlock(document, currentPosition.line(), insertionText)
-            currentPosition.setColumn(firstColumn)
-            view.setCursorPosition(currentPosition)
+            pos = view.cursorPosition()
+            document.insertText(pos, '\n'.join(insertionText) + '\n')
+            pos.setColumn(firstColumn)
+            view.setCursorPosition(pos)
             view.removeSelection()
             document.endEditing()
 
     else:
-        (text, column) = processLine(document.line(currentPosition.line()), commentCh)
+        (text, column) = processLine(document.line(pos.line()), commentCh)
 
         # Apply result (if smth really has changed)
-        originalText = document.line(currentPosition.line())
+        originalText = document.line(pos.line())
         if bool(text) and (len(text) != 1 or originalText != text[0]):
             document.startEditing()                         # Start edit transaction:
-            document.removeLine(currentPosition.line())     # Remove current line
+            document.removeLine(pos.line())                 # Remove current line
             # insert resulting text line by line...
-            insertTextBlock(document, currentPosition.line(), text)
+            insertTextBlock(document, pos.line(), text)
             document.endEditing()                           # End transaction
 
         # Move cursor to desired position
-        currentPosition.setColumn(column)
-        view.setCursorPosition(currentPosition)
+        pos.setColumn(column)
+        view.setCursorPosition(pos)
 
 
 @kate.action('Move Comment Above', shortcut='Meta+Left')
@@ -282,12 +299,12 @@ def moveAbove():
     """
     document = kate.activeDocument()
     view = kate.activeView()
-    currentPosition = view.cursorPosition()
+    pos = view.cursorPosition()
     commentCh = getCommentStyleForDoc(document)
 
     if not view.selection():
         insertionText = list()
-        line = document.line(currentPosition.line())
+        line = document.line(pos.line())
         # Split a line before and after a comment
         (before, comment, after) = str(line).partition(commentCh)
 
@@ -315,14 +332,14 @@ def moveAbove():
         # Update the document
         if bool(insertionText):
             document.startEditing()                         # Start edit transaction:
-            document.removeLine(currentPosition.line())     # Remove current line
+            document.removeLine(pos.line())                 # Remove current line
 
             # insert resulting text line by line...
-            insertTextBlock(document, currentPosition.line(), insertionText)
+            insertTextBlock(document, pos.line(), insertionText)
 
             # Move cursor to desired position
-            currentPosition.setColumn(column)
-            view.setCursorPosition(currentPosition)
+            pos.setColumn(column)
+            view.setCursorPosition(pos)
             document.endEditing()                           # End transaction
 
 
@@ -337,12 +354,12 @@ def moveAbove():
 def moveInline():
     document = kate.activeDocument()
     view = kate.activeView()
-    currentPosition = view.cursorPosition()
+    pos = view.cursorPosition()
     commentCh = getCommentStyleForDoc(document)
 
     if not view.selection():
         insertionText = []
-        currentLine = document.line(currentPosition.line())
+        currentLine = document.line(pos.line())
         auxLine2Remove = 0
         # Split a line before and after a comment
         (before, comment, after) = currentLine.partition(commentCh)
@@ -354,7 +371,7 @@ def moveInline():
             # No! What about comment?
             if bool(comment):
                 # Aha... the comment is here. Ok. Lets get a line below the current...
-                lineBelow = document.line(currentPosition.line() + 1)
+                lineBelow = document.line(pos.line() + 1)
                 (b_before, b_comment, b_after) = lineBelow.partition(commentCh)
                 auxLine2Remove = 1
                 # Check for text and comment in it...
@@ -375,7 +392,9 @@ def moveInline():
                             if after[0:2] == '/ ':
                                 after = '/< ' + after[2:]
                                 doxCommentOffset = 2
-                            insertionText.append(b_before_s + ' ' * (COMMENT_POS - len(b_before_s)) + commentCh + after.rstrip())
+                            insertionText.append(
+                                b_before_s + ' ' * (COMMENT_POS - len(b_before_s)) + commentCh + after.rstrip()
+                              )
                             column = COMMENT_POS + 3 + doxCommentOffset
                 else:
                     # No text on the line below! Dunno what damn user wants...
@@ -389,15 +408,15 @@ def moveInline():
         if bool(insertionText):
             document.startEditing()                         # Start edit transaction:
             if auxLine2Remove != 0:
-                document.removeLine(currentPosition.line() + auxLine2Remove)
-            document.removeLine(currentPosition.line())     # Remove current line
+                document.removeLine(pos.line() + auxLine2Remove)
+            document.removeLine(pos.line())     # Remove current line
 
             # insert resulting text line by line...
-            insertTextBlock(document, currentPosition.line(), insertionText)
+            insertTextBlock(document, pos.line(), insertionText)
 
             # Move cursor to desired position
-            currentPosition.setColumn(column)
-            view.setCursorPosition(currentPosition)
+            pos.setColumn(column)
+            view.setCursorPosition(pos)
             document.endEditing()                           # End transaction
 
 
@@ -522,32 +541,26 @@ def selectBlock():
         view.setSelection(r)
 
 
-def detectSimpleComment(start, step):
-    document = kate.activeDocument()
-
-    while (start > 0 and start < document.lines()):
-        line = str(document.line(start)).lstrip()
-        if line.startswith('///') or line.startswith('//!'):
-            start += step
-            continue
-        break
-    return start - step                                     # One step back!
-
-
 def turnToBlockComment():
     document = kate.activeDocument()
     view = kate.activeView()
-    currentPosition = view.cursorPosition()
+    pos = view.cursorPosition()
 
     if view.selection():
         sr = view.selectionRange()
         start = sr.start().line()
         end = sr.end().line()
     else:
-        start = detectSimpleComment(currentPosition.line(), -1)
-        end = detectSimpleComment(currentPosition.line(), 1) + 1
+        r = getTextBlockAroundCursor(
+            document
+          , pos
+          , [neg(any_of(pred.startsWith('///'), pred.startsWith('//!')))]
+          , [neg(any_of(pred.startsWith('///'), pred.startsWith('//!')))]
+          )
+        start = r.start().line()
+        end = r.end().line()
 
-    # Replace comments
+    # Replace comments in every line
     insertionText = list()
     align = None
     for i in range(start, end):
@@ -558,47 +571,42 @@ def turnToBlockComment():
         insertionText.append(align + sline.replace('///', ' *', 1).replace('//!', ' *', 1))
 
     originRange = KTextEditor.Range(start, 0, end, 0)
-    currentPosition.setPosition(start + 1, len(align) + 3)
+    pos.setPosition(start + 1, len(align) + 3)
+    insertPos = KTextEditor.Cursor(start, 0)
 
     # Update the document
     if bool(insertionText):
         document.startEditing()                             # Start edit transaction:
         document.removeText(originRange)                    # Remove current line
 
-        # insert resulting text line by line...
-        insertTextBlock(document, start, [align + '/**'] + insertionText + [align + ' */'])
+        # insert resulting text ...
+        document.insertText(insertPos, align + '/**\n' + '\n'.join(insertionText) + '\n' + align + ' */\n');
 
         # Move cursor to desired position
-        view.setCursorPosition(currentPosition)
+        view.setCursorPosition(pos)
         document.endEditing()                               # End transaction
-
-
-def detectBlockComment(start, step, terminate):
-    document = kate.activeDocument()
-
-    while (start > 0 and start < document.lines()):
-        line = str(document.line(start)).lstrip()
-        if line.startswith(terminate):
-            break
-        if line.startswith('*'):
-            start += step
-            continue
-        break
-    return start
 
 
 def turnFromBlockComment():
     document = kate.activeDocument()
     view = kate.activeView()
-    currentPosition = view.cursorPosition()
+    pos = view.cursorPosition()
 
     if view.selection():
         sr = view.selectionRange()
         start = sr.start().line()
         end = sr.end().line()
     else:
-        start = detectBlockComment(currentPosition.line(), -1, '/*')
-        end = detectBlockComment(currentPosition.line(), 1, '*/') + 1
+        # Try to detect block comment (/* ... */)
+        r = getTextBlockAroundCursor(
+            document
+          , pos
+          , [pred.blockCommentStart, neg(pred.startsWith('*'))]
+          , [pred.blockCommentEnd, neg(pred.startsWith('*'))]
+          )
+
+        start = r.start().line() - 1
+        end = r.end().line() + 1
 
     # Replace comments
     insertionText = list()
@@ -614,7 +622,8 @@ def turnFromBlockComment():
             insertionText.append(align + sline.replace('*', '///', 1))
 
     originRange = KTextEditor.Range(start, 0, end, 0)
-    currentPosition.setPosition(start, len(align) + 3)
+    pos.setPosition(start, len(align) + 3)
+    insertPos = KTextEditor.Cursor(start, 0)
 
     # Update the document
     if bool(insertionText):
@@ -622,10 +631,10 @@ def turnFromBlockComment():
         document.removeText(originRange)                    # Remove current line
 
         # insert resulting text line by line...
-        insertTextBlock(document, start, insertionText)
+        document.insertText(insertPos, '\n'.join(insertionText) + '\n')
 
         # Move cursor to desired position
-        view.setCursorPosition(currentPosition)
+        view.setCursorPosition(pos)
         document.endEditing()                               # End transaction
 
 
@@ -635,16 +644,112 @@ def turnFromBlockComment():
 def toggleDoxyComment():
     document = kate.activeDocument()
     view = kate.activeView()
-    currentPosition = view.cursorPosition()
+    pos = view.cursorPosition()
 
     # Determine type of current comment
-    line = str(document.line(currentPosition.line())).strip()
+    line = str(document.line(pos.line())).strip()
     if line.startswith('///'):
         turnToBlockComment()
     elif line.startswith('*') or line.startswith('/*') or line.startswith('*/'):
         turnFromBlockComment()
     else:
         return
+
+
+def getParagraphRange(doc, pos):
+    # Try to detect block comment (/* ... */)
+    r = getTextBlockAroundCursor(
+        doc
+      , pos
+      , [pred.blockCommentStart, pred.equalTo('*'), neg(pred.startsWith('*'))]
+      , [pred.blockCommentEnd, pred.equalTo('*'), neg(pred.startsWith('*'))]
+      )
+    isBlock = True
+    if r.isEmpty():
+        # Ok, maybe it's a single lines comment block?
+        r = getTextBlockAroundCursor(
+            doc
+          , pos
+          , [neg(pred.onlySingleLineComment)]
+          , [neg(pred.onlySingleLineComment)]
+          )
+        isBlock = False
+    return (r, isBlock)
+
+
+def changeParagraphWidth(step):
+    view = kate.activeView()
+    doc = kate.activeDocument()
+    pos = view.cursorPosition()
+
+    originRange, isBlock = getParagraphRange(doc, pos)
+    if originRange.isEmpty():
+        ui.popup("Sorry", "can't detect commented paragraph at cursor...", "face-sad")
+        return                                              # Dunno what to do on empty range!
+
+    indent = getCurrentLineIndentation(view)                # detect current align
+    # Processing:
+    # 0) split text into left stripped lines
+    originalText = view.document().text(originRange)
+    lines = [line.lstrip() for line in originalText.split('\n')]
+    # 1) detect comment style
+    comment = [c.strip() for c in lines[0].split(' ')][0]
+    # 2) strip leading comments (and possible left spaces) from each line
+    lines = [line[len(comment):].lstrip() for line in lines]
+    # 3) get a desired width of the current paragraph
+    if step == -1:
+        # 3.1) For shrink it is really simple: we just want to fit last word
+        # to the next line, and it is enough to specify max(line size) - 1
+        newSize = len(max(lines, key=len)) - 1
+    elif step == 1:
+        # 3.2) To extend paragraph we just want to append a first word from the next
+        # after longest line.
+        currentMax = 0
+        prevLineWasLongest = False
+        delta = 0
+        for line in lines:
+            # 3.2.1) if current maximum was changed on prevoius iteration,
+            # get length of a first word on a line
+            if prevLineWasLongest:
+                # NOTE +1 for one space
+                delta = len([word.strip() for word in line.split(' ')][0]) + 1
+            # 3.2.2) is current line longer than we've seen before?
+            lineSize = len(line)
+            prevLineWasLongest = bool(currentMax < lineSize)
+            if prevLineWasLongest:
+                currentMax = lineSize
+        newSize = currentMax + delta
+    else:
+        assert(not "Incorrect step specified")
+
+    # 4) wrap the text
+    res = textwrap.wrap(' '.join(lines), newSize, break_long_words=False)
+    # 5) form a text from the result list
+    align = ' ' * indent + comment + ' '
+    text = align + ('\n' + align).join(res) + '\n'
+
+    # Return text only if smth really changed
+    if originalText != text:                                # Update document only if smth really has changed
+        doc.startEditing()                                  # Start edit transaction:
+        doc.removeText(originRange)                         # Remove the origin range
+        doc.insertText(originRange.start(), text)           # Insert modified text
+        view.setCursorPosition(originRange.start())         # Move cursor to the start of the origin range
+        doc.endEditing()                                    # End transaction
+
+
+@kate.action('Shrink Comment Paragraph', shortcut='Meta+[', menu='Edit')
+@check_constraints
+@restrict_doc_type('C++')
+def shrinkParagraph():
+    changeParagraphWidth(-1)
+
+
+@kate.action('Extend Comment Paragraph', shortcut='Meta+]', menu='Edit')
+@check_constraints
+@restrict_doc_type('C++')
+def extendParagraph():
+    changeParagraphWidth(1)
+
 
 #@kate.viewChanged
 #def vc1():

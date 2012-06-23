@@ -14,6 +14,12 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 project(kate-pate-plugins NONE)
 
+# Set project version numbers
+set(VERSION_MAJOR 0)
+set(VERSION_MINOR 5)
+set(VERSION_PATCH 2)
+set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+
 #---------------------------------------------------------
 # Section: Find used stuff
 #---------------------------------------------------------
@@ -50,6 +56,7 @@ if(INSTALL_TYPE STREQUAL "user")
         HINTS ${_data_dir}
       )
 else()
+    # TODO Check some other systems: is this file require to install some devel packages?
     find_path(KDE4_DATA_DIR cmake/modules/FindKDE4Internal.cmake HINTS ${_data_dir})
 endif()
 set(CMAKE_INSTALL_PREFIX "${KDE4_DATA_DIR}/kate/pate")
@@ -66,6 +73,7 @@ set(
     ${LIBKATEPATE_DIR}/__init__.py
     ${LIBKATEPATE_DIR}/common.py
     ${LIBKATEPATE_DIR}/decorators.py
+    ${LIBKATEPATE_DIR}/pred.py
     ${LIBKATEPATE_DIR}/ui.py
   )
 python_install(${CMAKE_INSTALL_PREFIX}/${LIBKATEPATE_DIR} ${LIBKATEPATE_SOURCES})
@@ -93,11 +101,6 @@ python_install(${CMAKE_INSTALL_PREFIX}/${EXPAND_DIR} ${EXPAND_SOURCES})
 #---------------------------------------------------------
 # Section: Configure package options
 #---------------------------------------------------------
-
-set(VERSION_MAJOR 0)
-set(VERSION_MINOR 5)
-set(VERSION_PATCH 1)
-set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 # CPack version numbers for release tarball name.
 set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
