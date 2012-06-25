@@ -37,75 +37,88 @@
 import kate
 import kate.gui
 
+from PyKDE4.ktexteditor import KTextEditor
+
+from libkatepate import ui, common
+
 @kate.action('Insert Char From Line Above', shortcut='Meta+E')
 def insertCharFromLineAbove():
-    document = kate.activeDocument()
+    doc = kate.activeDocument()
     view = kate.activeView()
-    currentPosition = view.cursorPosition()
+    pos = view.cursorPosition()
 
-    if currentPosition.line() == 0:
+    if pos.line() == 0:
         return
 
-    lineAbove = document.line(currentPosition.line() - 1)
-    char = lineAbove[currentPosition.column():currentPosition.column() + 1]
+    lineAbove = doc.line(pos.line() - 1)
+    char = lineAbove[pos.column():pos.column() + 1]
     if not bool(char):
         return
 
-    document.startEditing()
-    document.insertText(currentPosition, char)
-    document.endEditing()
+    doc.startEditing()
+    doc.insertText(pos, char)
+    doc.endEditing()
 
 
 @kate.action('Insert Char From Line Below', shortcut='Meta+W')
 def insertCharFromLineBelow():
-    document = kate.activeDocument()
+    doc = kate.activeDocument()
     view = kate.activeView()
-    currentPosition = view.cursorPosition()
+    pos = view.cursorPosition()
 
-    if currentPosition.line() == 0:
+    if pos.line() == 0:
         return
 
-    lineBelow = document.line(currentPosition.line() + 1)
-    char = lineBelow[currentPosition.column():currentPosition.column() + 1]
+    lineBelow = doc.line(pos.line() + 1)
+    char = lineBelow[pos.column():pos.column() + 1]
     if not bool(char):
         return
 
-    document.startEditing()
-    document.insertText(currentPosition, char)
-    document.endEditing()
+    doc.startEditing()
+    doc.insertText(pos, char)
+    doc.endEditing()
 
 
 @kate.action('Kill Text After Cursor', shortcut='Meta+K')
 def killRestOfLine():
-    document = kate.activeDocument()
+    doc = kate.activeDocument()
     view = kate.activeView()
-    currentPosition = view.cursorPosition()
+    pos = view.cursorPosition()
 
-    originalLine = document.line(currentPosition.line())
-    line = originalLine[0:currentPosition.column()]
+    endPosition = KTextEditor.Cursor(pos.line(), doc.lineLength(pos.line()))
+    killRange = KTextEditor.Range(pos, endPosition)
 
-    if line != originalLine:
-        document.startEditing()
-        document.removeLine(currentPosition.line())
-        document.insertLine(currentPosition.line(), line)
-        document.endEditing()
+    doc.startEditing()
+    doc.removeText(killRange)
+    doc.endEditing()
 
 
 @kate.action('Kill Text Before Cursor', shortcut='Meta+U')
-def killRestOfLine():
-    document = kate.activeDocument()
+def killLeadOfLine():
+    ''' Remove text from a start of a line to the current crsor position
+
+        NOTE This function suppose spaces as indentation character!
+    '''
+    doc = kate.activeDocument()
     view = kate.activeView()
-    currentPosition = view.cursorPosition()
+    pos = view.cursorPosition()
 
-    originalLine = document.line(currentPosition.line())
-    line = originalLine
-    spaceCount = len(line) - len(line.lstrip())
-    line = ' ' * spaceCount + line[currentPosition.column():]
+    indent = common.getCurrentLineIndentation(view)
+    startPosition = KTextEditor.Cursor(pos.line(), 0)
+    killRange = KTextEditor.Range(startPosition, pos)
 
-    if line != originalLine:
-        document.startEditing()
-        document.removeLine(currentPosition.line())
-        document.insertLine(currentPosition.line(), line)
-        currentPosition.setColumn(spaceCount)
-        view.setCursorPosition(currentPosition)
-        document.endEditing()
+    doc.startEditing()
+    doc.removeText(killRange)
+    doc.insertText(startPosition, ' ' * indent)
+    doc.endEditing()
+
+
+@kate.action('Test', shortcut='Meta+O', menu='View')
+def test():
+    doc = kate.activeDocument()
+    view = kate.activeView()
+    ui.popup(
+        text="Current document MIME type: <b>" + doc.mimeType() + "</b><br/>hl: <b>" + doc.highlightingMode() + "</b>"
+      , caption="Some document info: file type"
+      , iconName="face-wink"
+      )
