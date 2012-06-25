@@ -74,6 +74,7 @@ set(
     ${LIBKATEPATE_DIR}/common.py
     ${LIBKATEPATE_DIR}/decorators.py
     ${LIBKATEPATE_DIR}/pred.py
+    ${LIBKATEPATE_DIR}/selection.py
     ${LIBKATEPATE_DIR}/ui.py
   )
 python_install(${CMAKE_INSTALL_PREFIX}/${LIBKATEPATE_DIR} ${LIBKATEPATE_SOURCES})

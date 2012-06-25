@@ -36,6 +36,10 @@ import kate
 from PyKDE4.ktexteditor import KTextEditor
 from libkatepate import ui
 
+from libkatepate.decorators import *
+from libkatepate import selection
+
+
 def getLeftNeighbour(lineStr, column):
     if column:
         return lineStr[column - 1]
@@ -295,6 +299,9 @@ def boostFormatText(textRange, indent, breakPositions):
         document.endEditing()
 
 @kate.action('Boost-like Format Params', shortcut='Meta+F')
+@check_constraints
+@has_selection(False)
+@selection_mode(selection.NORMAL)
 def boostFormat():
     document = kate.activeDocument()
     view = kate.activeView()
@@ -347,6 +354,9 @@ def boostUnformatText(textRange, breakPositions):
 
 
 @kate.action('Unformat Function Params', shortcut='Meta+Shift+F')
+@check_constraints
+@has_selection(False)
+@selection_mode(selection.NORMAL)
 def boostFormat():
     document = kate.activeDocument()
     view = kate.activeView()

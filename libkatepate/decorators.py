@@ -27,7 +27,6 @@ from libkatepate import common
 def append_constraint(action, constraint):
     if not hasattr(action, 'constraints'):
         action.constraints = []
-    print("*** append_constraint: c=" + repr(constraint))
     action.constraints.append(constraint)
 
 
@@ -83,3 +82,58 @@ def comment_char_must_be_known(dummy = None):
         append_constraint(action, binded_predicate)
         return action
     return comment_char_known_decorator
+
+
+def selection_mode(selectionMode):
+    ''' Restrict action to given selection mode
+
+        ALERT In block mode it is Ok to have cursor position after the line end!
+        This could lead to 'index is out of string' exceptions if algorithm is a little rough :-)
+        So it is why this constraint needed :)
+    '''
+    def selection_mode_decorator(action):
+        def selection_mode_checker(selectionMode, document):
+            view = document.activeView()
+            result = selectionMode == view.blockSelection()
+            if not result:
+                if selectionMode:
+                    mode = 'block'
+                else:
+                    mode = 'normal'
+                ui.popup(
+                    "Oops!"
+                  , "This operation is for %s selection mode!" % mode
+                  , "face-sad"
+                  )
+            return result
+        binded_predicate = functools.partial(selection_mode_checker, selectionMode)
+        append_constraint(action, binded_predicate)
+        return action
+    return selection_mode_decorator
+
+
+def has_selection(selectionState):
+    def has_selection_decorator(action):
+        def has_selection_checker(selectionState, document):
+            view = document.activeView()
+            result = selectionState == view.selection()
+            print("*** has_selection: result=%s" % repr(result))
+            if not result:
+                if not selectionState:
+                    should = "n't"
+                else:
+                    should = ''
+                ui.popup(
+                    "Oops!"
+                  , "Document should%s have selection to perform this operation" % should
+                  , "face-sad"
+                  )
+            return result
+        binded_predicate = functools.partial(has_selection_checker, selectionState)
+        append_constraint(action, binded_predicate)
+        return action
+    return has_selection_decorator
+
+
+# TODO All decorators are look same...
+# It seems we need another one decorator to produce decorators of decorators :-)

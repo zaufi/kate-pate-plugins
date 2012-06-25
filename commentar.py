@@ -69,9 +69,9 @@ import textwrap
 # TODO Is it really bad to import in such way? (even here?)
 from PyKDE4.ktexteditor import KTextEditor
 
-from libkatepate.decorators import restrict_doc_type, check_constraints, comment_char_must_be_known
+from libkatepate.decorators import *
 from libkatepate.common import getCommentStyleForDoc, getTextBlockAroundCursor, getCurrentLineIndentation
-from libkatepate import ui
+from libkatepate import ui, selection
 # text processing predicates
 from libkatepate import pred
 from libkatepate.pred import neg, all_of, any_of
@@ -238,6 +238,7 @@ def processLine(line, commentCh):
 @kate.action('Inline Comment', shortcut='Alt+D', menu='Edit')
 @check_constraints
 @comment_char_must_be_known()
+@selection_mode(selection.NORMAL)
 def commentar():
     """Append or align an inlined comment to COMMENT_POS for the current line or the selection.
 
@@ -302,122 +303,118 @@ def moveAbove():
     pos = view.cursorPosition()
     commentCh = getCommentStyleForDoc(document)
 
-    if not view.selection():
-        insertionText = list()
-        line = document.line(pos.line())
-        # Split a line before and after a comment
-        (before, comment, after) = str(line).partition(commentCh)
+    insertionText = list()
+    line = document.line(pos.line())
+    # Split a line before and after a comment
+    (before, comment, after) = str(line).partition(commentCh)
 
-        before_ls = before.lstrip()
-        column = len(before) - len(before_ls)
-        doxCommentOffset = 0
-        # Is there is a comment in a line?
-        if bool(comment):
-            # Yeah! It is... Now what about any text??
-            if bool(before.strip()):
-                if after[0:2] == '/<':
-                    after = '/' + after[2:]
-                    doxCommentOffset = 1
-                insertionText.append(' ' * column + comment + after)
-            else:
-                # There is comment alone... Just leave it...
-                return
+    before_ls = before.lstrip()
+    column = len(before) - len(before_ls)
+    doxCommentOffset = 0
+    # Is there is a comment in a line?
+    if bool(comment):
+        # Yeah! It is... Now what about any text??
+        if bool(before.strip()):
+            if after[0:2] == '/<':
+                after = '/' + after[2:]
+                doxCommentOffset = 1
+            insertionText.append(' ' * column + comment + after)
         else:
-            # Oops! There is no inline comment... Ok just add new one above.
-            insertionText.append(' ' * column + commentCh)
+            # There is comment alone... Just leave it...
+            return
+    else:
+        # Oops! There is no inline comment... Ok just add new one above.
+        insertionText.append(' ' * column + commentCh)
 
-        column += len(commentCh) + doxCommentOffset
-        insertionText.append(before.rstrip());
+    column += len(commentCh) + doxCommentOffset
+    insertionText.append(before.rstrip());
 
-        # Update the document
-        if bool(insertionText):
-            document.startEditing()                         # Start edit transaction:
-            document.removeLine(pos.line())                 # Remove current line
+    # Update the document
+    if bool(insertionText):
+        document.startEditing()                             # Start edit transaction:
+        document.removeLine(pos.line())                     # Remove current line
 
-            # insert resulting text line by line...
-            insertTextBlock(document, pos.line(), insertionText)
+        # insert resulting text line by line...
+        insertTextBlock(document, pos.line(), insertionText)
 
-            # Move cursor to desired position
-            pos.setColumn(column)
-            view.setCursorPosition(pos)
-            document.endEditing()                           # End transaction
+        # Move cursor to desired position
+        pos.setColumn(column)
+        view.setCursorPosition(pos)
+        document.endEditing()                               # End transaction
 
 
-#
-# Move comment above the current line as inline comment or
-# if current line contains just comment try to make it inline
-# (if line below still has no one)
-#
 @kate.action('Move Comment Inline', shortcut='Meta+Right')
 @check_constraints
 @comment_char_must_be_known()
 def moveInline():
+    ''' Move a comment at the current line as inline comment of the next line
+        (if latter has no comment yet)
+    '''
     document = kate.activeDocument()
     view = kate.activeView()
     pos = view.cursorPosition()
     commentCh = getCommentStyleForDoc(document)
 
-    if not view.selection():
-        insertionText = []
-        currentLine = document.line(pos.line())
-        auxLine2Remove = 0
-        # Split a line before and after a comment
-        (before, comment, after) = currentLine.partition(commentCh)
+    insertionText = []
+    currentLine = document.line(pos.line())
+    auxLine2Remove = 0
+    # Split a line before and after a comment
+    (before, comment, after) = currentLine.partition(commentCh)
 
-        # Is there some text on a line?
-        if bool(before.strip()):
-            return                                          # Aha... move cursor co comment u stupid bastard!
-        else:
-            # No! What about comment?
-            if bool(comment):
-                # Aha... the comment is here. Ok. Lets get a line below the current...
-                lineBelow = document.line(pos.line() + 1)
-                (b_before, b_comment, b_after) = lineBelow.partition(commentCh)
-                auxLine2Remove = 1
-                # Check for text and comment in it...
-                if bool(b_before.strip()):
-                    # Text present... Comment?
-                    if bool(b_comment):
-                        # Comment too... just leave it...
+    # Is there some text on a line?
+    if bool(before.strip()):
+        return                                              # Aha... move cursor co comment u stupid bastard!
+    else:
+        # No! What about comment?
+        if bool(comment):
+            # Aha... the comment is here. Ok. Lets get a line below the current...
+            lineBelow = document.line(pos.line() + 1)
+            (b_before, b_comment, b_after) = lineBelow.partition(commentCh)
+            auxLine2Remove = 1
+            # Check for text and comment in it...
+            if bool(b_before.strip()):
+                # Text present... Comment?
+                if bool(b_comment):
+                    # Comment too... just leave it...
+                    return
+                else:
+                    # Just text.... no comment. Ok lets work!
+                    # (if there is some space remains for inline comment)
+                    b_before_s = b_before.rstrip()
+                    if len(b_before_s) > COMMENT_POS:
+                        # Oops! No space remains! Get outa here
                         return
                     else:
-                        # Just text.... no comment. Ok lets work!
-                        # (if there is some space remains for inline comment)
-                        b_before_s = b_before.rstrip()
-                        if len(b_before_s) > COMMENT_POS:
-                            # Oops! No space remains! Get outa here
-                            return
-                        else:
-                            doxCommentOffset = 0
-                            if after[0:2] == '/ ':
-                                after = '/< ' + after[2:]
-                                doxCommentOffset = 2
-                            insertionText.append(
-                                b_before_s + ' ' * (COMMENT_POS - len(b_before_s)) + commentCh + after.rstrip()
-                              )
-                            column = COMMENT_POS + 3 + doxCommentOffset
-                else:
-                    # No text on the line below! Dunno what damn user wants...
-                    return
+                        doxCommentOffset = 0
+                        if after[0:2] == '/ ':
+                            after = '/< ' + after[2:]
+                            doxCommentOffset = 2
+                        insertionText.append(
+                            b_before_s + ' ' * (COMMENT_POS - len(b_before_s)) + commentCh + after.rstrip()
+                            )
+                        column = COMMENT_POS + 3 + doxCommentOffset
             else:
-                # Nothing! Just blank line... Dunno what to do...
+                # No text on the line below! Dunno what damn user wants...
                 return
-            pass
+        else:
+            # Nothing! Just blank line... Dunno what to do...
+            return
+        pass
 
-        # Update the document
-        if bool(insertionText):
-            document.startEditing()                         # Start edit transaction:
-            if auxLine2Remove != 0:
-                document.removeLine(pos.line() + auxLine2Remove)
-            document.removeLine(pos.line())     # Remove current line
+    # Update the document
+    if bool(insertionText):
+        document.startEditing()                             # Start edit transaction:
+        if auxLine2Remove != 0:
+            document.removeLine(pos.line() + auxLine2Remove)
+        document.removeLine(pos.line())     # Remove current line
 
-            # insert resulting text line by line...
-            insertTextBlock(document, pos.line(), insertionText)
+        # insert resulting text line by line...
+        insertTextBlock(document, pos.line(), insertionText)
 
-            # Move cursor to desired position
-            pos.setColumn(column)
-            view.setCursorPosition(pos)
-            document.endEditing()                           # End transaction
+        # Move cursor to desired position
+        pos.setColumn(column)
+        view.setCursorPosition(pos)
+        document.endEditing()                               # End transaction
 
 
 @kate.action('Comment Block w/ `#if0`', shortcut='Meta+D', menu='Edit')
@@ -425,6 +422,9 @@ def moveInline():
 @restrict_doc_type('C++', 'C')
 def commentBlock():
     view = kate.activeView()
+
+    # This operation have no sense for partly selected lines
+    extendSelectionToWholeLine(view)
 
     start = -1
     end = -1
@@ -476,6 +476,8 @@ def toggleBlock():
         # TODO Do not lose formatting!
         document.insertLine(blocksList[idx][0], "#if " + newValue)
         document.endEditing()                                   # End transaction
+    else:
+        ui.popup("Oops", "It seems cursor positioned out of any #if0/#if1 block", "face-sad")
 
 
 @kate.action('Remove `#if0` Block', shortcut='Meta+R', menu='Edit')
@@ -521,6 +523,8 @@ def removeBlock():
                 document.removeLine(blocksList[idx][1])
                 document.removeLine(blocksList[idx][0])
         document.endEditing()                                   # End transaction
+    else:
+        ui.popup("Oops", "It seems cursor positioned out of any #if0/#if1 block", "face-sad")
 
 
 @kate.action('Select Current `#if0/#if1` Block', shortcut='Meta+S', menu='Edit')
@@ -539,6 +543,8 @@ def selectBlock():
     if idx != -1:
         r = KTextEditor.Range(blocksList[idx][0], 0, blocksList[idx][1] + 1, 0)
         view.setSelection(r)
+    else:
+        ui.popup("Oops", "It seems cursor positioned out of any #if0/#if1 block", "face-sad")
 
 
 def turnToBlockComment():
@@ -641,6 +647,7 @@ def turnFromBlockComment():
 @kate.action('Transform Doxygen Comments', shortcut='Meta+X', menu='Edit')
 @check_constraints
 @restrict_doc_type('C++')
+@has_selection(False)
 def toggleDoxyComment():
     document = kate.activeDocument()
     view = kate.activeView()

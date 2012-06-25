@@ -1,12 +1,16 @@
-Version 0.5.2 (2012-06-23)
+Version 0.5.2 (2012-06-25)
 ==========================
 
 * comment paragraph shrink/extend plugin (Meta+[, Meta+])
-* some of existed plugins refactored to be faster
+* some of existed plugins are refactored to be faster
   (also to use new text processing facilities)
 * if selection on the only line, extend it to whole line before do commenting
   (to avoid garbage in result)
 * add sw(expr[, case1[, ..., caseN]]) expansion to generate switch statements
+* add constraints to some operations to avoid garbage if a document has selection
+  or block selection mode is ON
+* improve performance for some operations
+
 
 Version 0.5.1 (2012-06-14)
 ==========================
