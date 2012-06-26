@@ -96,15 +96,6 @@ def isApplicableMime():
     return str(kate.activeDocument().mimeType()).find('c++') != -1
 
 
-def insertTextBlock(document, line, text):
-    """Put lines from a list into the current position (line) in a document
-    """
-    if bool(text):
-        for l in text:
-            document.insertLine(line, l)
-            line += 1
-
-
 def extendSelectionToWholeLine(view):
     selectedRange = view.selectionRange()
     if not selectedRange.isEmpty():
@@ -284,7 +275,8 @@ def commentar():
             document.startEditing()                         # Start edit transaction:
             document.removeLine(pos.line())                 # Remove current line
             # insert resulting text line by line...
-            insertTextBlock(document, pos.line(), text)
+            pos.setColumn(0)
+            document.insertText(pos, '\n'.join(text) + '\n')
             document.endEditing()                           # End transaction
 
         # Move cursor to desired position
@@ -335,7 +327,8 @@ def moveAbove():
         document.removeLine(pos.line())                     # Remove current line
 
         # insert resulting text line by line...
-        insertTextBlock(document, pos.line(), insertionText)
+        pos.setColumn(0)
+        document.insertText(pos, '\n'.join(insertionText) + '\n')
 
         # Move cursor to desired position
         pos.setColumn(column)
@@ -409,7 +402,8 @@ def moveInline():
         document.removeLine(pos.line())     # Remove current line
 
         # insert resulting text line by line...
-        insertTextBlock(document, pos.line(), insertionText)
+        pos.setColumn(0)
+        document.insertText(pos, '\n'.join(insertionText) + '\n')
 
         # Move cursor to desired position
         pos.setColumn(column)

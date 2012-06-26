@@ -19,7 +19,7 @@
 
 ''' Reusable code for Kate/Pâté plugins: selection mode constants
 
-    ... just to introduce seperate `namespace`
+    ... just to introduce separate `namespace`
     NOTE Is there (in Python) a better way to do it?
 '''
 
