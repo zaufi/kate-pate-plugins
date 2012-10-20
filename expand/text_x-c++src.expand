@@ -39,8 +39,7 @@
 
 from libkatepate import ui
 
-_BRIEF_DOC_TPL = \
-'''/**
+_BRIEF_DOC_TPL = '''/**
  * \\brief Class \c {0}
  */'''
 
@@ -65,6 +64,19 @@ public:
 _STRUCT_BODY_TPL = '''
 struct {0}
 {{
+}};
+'''
+
+_MFC_TPL = '''/**
+ * \\brief Metafunction class \c {0}
+ */
+struct {0}
+{{
+\ttemplate <{1}>
+\tstruct apply
+\t{{
+\t\ttypedef %{{cursor}} type;
+\t}};
 }};
 '''
 
@@ -138,6 +150,29 @@ def st(name, *templateParams):
     else:
         template = _BRIEF_DOC_TPL + _STRUCT_BODY_TPL
     return template.format(*params)
+
+
+def mfc(name, *templateParams):
+    ''' Insert a metafunction class definition
+
+        A first mandatory parameter is a structure name.
+        Everything after that will be template parameters.
+          mfc(foo, T, U, V)
+
+        will expand into:
+            struct foo
+            {
+                template <typename T, typename U, typename V>
+                struct apply
+                {
+                }
+            };
+    '''
+    params = [name]
+    if len(templateParams):
+        params.append('typename ' + ', typename '.join(templateParams))
+        return _MFC_TPL.format(*params)
+    return st(name)                                         # Just return a usual structure...
 
 
 def cl(name, *templateParams):
@@ -237,4 +272,5 @@ def sw(expr = None, *caseList):
 
 def test(expr):
     return '{\n\t%{cursor}' + expr + '\n}'
+
 # kate: hl python;

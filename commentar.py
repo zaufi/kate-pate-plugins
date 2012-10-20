@@ -640,7 +640,7 @@ def turnFromBlockComment():
 
 @kate.action('Transform Doxygen Comments', shortcut='Meta+X', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++')
+@restrict_doc_type('C++', 'JavaScript')
 @has_selection(False)
 def toggleDoxyComment():
     document = kate.activeDocument()
@@ -740,14 +740,14 @@ def changeParagraphWidth(step):
 
 @kate.action('Shrink Comment Paragraph', shortcut='Meta+[', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++')
+@restrict_doc_type('C++', 'JavaScript')
 def shrinkParagraph():
     changeParagraphWidth(-1)
 
 
 @kate.action('Extend Comment Paragraph', shortcut='Meta+]', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++')
+@restrict_doc_type('C++', 'JavaScript')
 def extendParagraph():
     changeParagraphWidth(1)
 
