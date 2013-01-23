@@ -196,7 +196,7 @@ def cl(name, *templateParams):
 
 
 def t(*params):
-    '''Render template header w/ given template parameters list
+    ''' Render template header w/ given template parameters list
     '''
     return 'template <typename ' + ', typename '.join(params) + '>'
 
@@ -247,14 +247,16 @@ def gs(typeT, name, ref = None):
 
 
 def main(args=True):
-    '''Render main() function'''
+    ''' Render main() function
+    '''
     if args:
         return _MAIN_WITH_ARGS_TPL
     return _MAIN_TPL
 
 
 def sw(expr = None, *caseList):
-    ''' Render switch() statement w/ a list of cases'''
+    ''' Render switch() statement w/ a list of cases
+    '''
     if expr:
         if caseList:
             caseStr = ''

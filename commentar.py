@@ -70,20 +70,14 @@ import textwrap
 from PyKDE4.ktexteditor import KTextEditor
 
 from libkatepate.decorators import *
-from libkatepate.common import getCommentStyleForDoc, getTextBlockAroundCursor, getCurrentLineIndentation
-from libkatepate import ui, selection
+from libkatepate import common, ui, selection
 # text processing predicates
 from libkatepate import pred
 from libkatepate.pred import neg, all_of, any_of
 
 
-if 'commentar:comment-position' not in kate.configuration:
-    kate.configuration['commentar:comment-position'] = int(60)
-if 'commentar:comment-threashold' not in kate.configuration:
-    kate.configuration['commentar:comment-threashold'] = int(50)
-
-COMMENT_POS = kate.configuration['commentar:comment-position']
-COMMENT_THRESHOLD = kate.configuration['commentar:comment-threashold']
+COMMENT_POS = 60
+COMMENT_THRESHOLD = 50
 BLOCK_ANY_START_SEARCH_RE = re.compile('^\s*#\s*if.*$')
 BLOCK_START_SEARCH_RE = re.compile('^\s*#\s*if\s*([01])$')
 BLOCK_ELSE_SEARCH_RE = re.compile('^\s*#\s*else.*$')
@@ -95,16 +89,6 @@ BLOCK_START_GET_COND_RE = re.compile('^\s*#\s*(if((n)?def)?)\s+(.*)\s*$')
 def isApplicableMime():
     return str(kate.activeDocument().mimeType()).find('c++') != -1
 
-
-def extendSelectionToWholeLine(view):
-    selectedRange = view.selectionRange()
-    if not selectedRange.isEmpty():
-        # ... extend selection to whole line, before do smth
-        selectedRange.start().setColumn(0)
-        if selectedRange.end().column() != 0:
-            selectedRange.end().setColumn(0)
-            selectedRange.end().setLine(selectedRange.end().line() + 1)
-        view.setSelection(selectedRange)
 
 #
 # Build a list of tuples (start, end, elseif, is_comment) for all #if/#elseif/#endif blocks
@@ -145,14 +129,14 @@ def buildIfEndifMap(document):
 
 
 def locateBlock(currentLine, blockRanges, ignoreComments = False):
-    """Find an index of a current block
+    '''Find an index of a current block
 
         Return index into blockRanges of the block pointer by current cursor position
         or -1 if nothing found.
 
         TODO Rename to better name?
         TODO Is there any better way to implement a code similar to std::find_if in C++?
-    """
+    '''
     # Locate a block where cursor currently positioned
     idx = -1
     c = 0
@@ -231,18 +215,18 @@ def processLine(line, commentCh):
 @comment_char_must_be_known()
 @selection_mode(selection.NORMAL)
 def commentar():
-    """Append or align an inlined comment to COMMENT_POS for the current line or the selection.
+    '''Append or align an inlined comment to COMMENT_POS for the current line or the selection.
 
         Move cursor to the start of a comment, if nothing has changed.
-    """
+    '''
     document = kate.activeDocument()
     view = kate.activeView()
     pos = view.cursorPosition()
-    commentCh = getCommentStyleForDoc(document)
+    commentCh = common.getCommentStyleForDoc(document)
 
     if view.selection():
         # If selected smth on a single line...
-        extendSelectionToWholeLine(view)
+        common.extendSelectionToWholeLine(view)
 
         selectedText = view.selectionText().split('\n')
         if not bool(selectedText[-1]):
@@ -288,12 +272,12 @@ def commentar():
 @check_constraints
 @comment_char_must_be_known()
 def moveAbove():
-    """Move inlined comment before the current line at same align
-    """
+    '''Move inlined comment before the current line at same align
+    '''
     document = kate.activeDocument()
     view = kate.activeView()
     pos = view.cursorPosition()
-    commentCh = getCommentStyleForDoc(document)
+    commentCh = common.getCommentStyleForDoc(document)
 
     insertionText = list()
     line = document.line(pos.line())
@@ -346,7 +330,7 @@ def moveInline():
     document = kate.activeDocument()
     view = kate.activeView()
     pos = view.cursorPosition()
-    commentCh = getCommentStyleForDoc(document)
+    commentCh = common.getCommentStyleForDoc(document)
 
     insertionText = []
     currentLine = document.line(pos.line())
@@ -413,12 +397,12 @@ def moveInline():
 
 @kate.action('Comment Block w/ `#if0`', shortcut='Meta+D', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++', 'C')
+@restrict_doc_type('C++', 'C++11', 'C++11/Qt4', 'C')
 def commentBlock():
     view = kate.activeView()
 
     # This operation have no sense for partly selected lines
-    extendSelectionToWholeLine(view)
+    common.extendSelectionToWholeLine(view)
 
     start = -1
     end = -1
@@ -442,7 +426,7 @@ def commentBlock():
 
 @kate.action('Toggle `#if0/#if1` Block', shortcut='Meta+Shift+D', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++', 'C')
+@restrict_doc_type('C++', 'C++11', 'C++11/Qt4', 'C')
 def toggleBlock():
     document = kate.activeDocument()
     view = kate.activeView()
@@ -476,7 +460,7 @@ def toggleBlock():
 
 @kate.action('Remove `#if0` Block', shortcut='Meta+R', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++', 'C')
+@restrict_doc_type('C++', 'C++11', 'C++11/Qt4', 'C')
 def removeBlock():
     document = kate.activeDocument()
     view = kate.activeView()
@@ -504,7 +488,6 @@ def removeBlock():
             else:
                 # No! So just remove whole block
                 r = KTextEditor.Range(blocksList[idx][0], 0, blocksList[idx][1] + 1, 0)
-            print r
             document.removeText(r)
         else:
             if blocksList[idx][2] != -1:                    # Is there `#else` part?
@@ -523,7 +506,7 @@ def removeBlock():
 
 @kate.action('Select Current `#if0/#if1` Block', shortcut='Meta+S', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++', 'C')
+@restrict_doc_type('C++', 'C++11', 'C++11/Qt4', 'C')
 def selectBlock():
     document = kate.activeDocument()
     view = kate.activeView()
@@ -551,7 +534,7 @@ def turnToBlockComment():
         start = sr.start().line()
         end = sr.end().line()
     else:
-        r = getTextBlockAroundCursor(
+        r = common.getTextBlockAroundCursor(
             document
           , pos
           , [neg(any_of(pred.startsWith('///'), pred.startsWith('//!')))]
@@ -598,7 +581,7 @@ def turnFromBlockComment():
         end = sr.end().line()
     else:
         # Try to detect block comment (/* ... */)
-        r = getTextBlockAroundCursor(
+        r = common.getTextBlockAroundCursor(
             document
           , pos
           , [pred.blockCommentStart, neg(pred.startsWith('*'))]
@@ -640,7 +623,7 @@ def turnFromBlockComment():
 
 @kate.action('Transform Doxygen Comments', shortcut='Meta+X', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++', 'JavaScript')
+@restrict_doc_type('C++', 'C++11', 'C++11/Qt4', 'JavaScript')
 @has_selection(False)
 def toggleDoxyComment():
     document = kate.activeDocument()
@@ -659,7 +642,7 @@ def toggleDoxyComment():
 
 def getParagraphRange(doc, pos):
     # Try to detect block comment (/* ... */)
-    r = getTextBlockAroundCursor(
+    r = common.getTextBlockAroundCursor(
         doc
       , pos
       , [pred.blockCommentStart, pred.equalTo('*'), neg(pred.startsWith('*'))]
@@ -668,7 +651,7 @@ def getParagraphRange(doc, pos):
     isBlock = True
     if r.isEmpty():
         # Ok, maybe it's a single lines comment block?
-        r = getTextBlockAroundCursor(
+        r = common.getTextBlockAroundCursor(
             doc
           , pos
           , [neg(pred.onlySingleLineComment)]
@@ -688,7 +671,7 @@ def changeParagraphWidth(step):
         ui.popup("Sorry", "can't detect commented paragraph at cursor...", "face-sad")
         return                                              # Dunno what to do on empty range!
 
-    indent = getCurrentLineIndentation(view)                # detect current align
+    indent = common.getCurrentLineIndentation(view)         # detect current align
     # Processing:
     # 0) split text into left stripped lines
     originalText = view.document().text(originRange)
@@ -740,14 +723,14 @@ def changeParagraphWidth(step):
 
 @kate.action('Shrink Comment Paragraph', shortcut='Meta+[', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++', 'JavaScript')
+@restrict_doc_type('C++', 'C++11', 'C++11/Qt4', 'JavaScript')
 def shrinkParagraph():
     changeParagraphWidth(-1)
 
 
 @kate.action('Extend Comment Paragraph', shortcut='Meta+]', menu='Edit')
 @check_constraints
-@restrict_doc_type('C++', 'JavaScript')
+@restrict_doc_type('C++', 'C++11', 'C++11/Qt4', 'JavaScript')
 def extendParagraph():
     changeParagraphWidth(1)
 

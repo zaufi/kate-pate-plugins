@@ -16,7 +16,7 @@ from PyKDE4.kdecore import KConfig
 class ParseError(Exception):
     pass
 
-wordBoundary = set(u' \t"\';[]{}()#:/\\,+=!?%^|&*~`')
+wordBoundary = set(' \t"\';[]{}()#:/\\,+=!?%^|&*~`')
 
 def wordAtCursor(document, view=None):
     view = view or document.activeView()
@@ -26,8 +26,8 @@ def wordAtCursor(document, view=None):
     return line[start:end]
 
 def wordAtCursorPosition(line, cursor):
-    ''' Get the word under the active view's cursor in the given
-    document '''
+    ''' Get the word under the active view's cursor in the given document
+    '''
     # better to use word boundaries than to hardcode valid letters because
     # expansions should be able to be in any unicode character.
     start = end = cursor.column()
@@ -136,7 +136,6 @@ def loadFileExpansions(path):
         # starting with two underscores (or more importantly, a Python
         # keyword)
         if not name.startswith('__') and callable(o):
-            print("** EXPANSIONS LOADER: add " + o.__name__)
             expansions[o.__name__] = o
     return expansions
 
@@ -156,7 +155,7 @@ def loadExpansions(mime):
 
 def indentationCharacters(document):
     ''' The characters used to indent in a document as set by variables in the
-    document or in the configuration. Will be something like '\t' or '    '
+        document or in the configuration. Will be something like '\t' or '    '
     '''
     v = document.variableInterface()
     # cache
@@ -167,7 +166,7 @@ def indentationCharacters(document):
         # gross, but there's no public API for this. Growl.
         indentationCharacters.configurationUseTabs = True
         if flags and int(flags) & 0x2000000:
-            print 'insert spaces instead of tabulators'
+            print('insert spaces instead of tabulators')
             indentationCharacters.configurationUseTabs = False
 
         indentWidth = str(group.readEntry('Indentation Width'))
@@ -199,7 +198,7 @@ def expandAtCursor():
     view = document.activeView()
     try:
         word_range, argument_range = wordAndArgumentAtCursorRanges(document, view.cursorPosition())
-    except ParseError, e:
+    except ParseError as e:
         kate.popup('Parse error:', e)
         return
     word = document.text(word_range)
@@ -215,27 +214,27 @@ def expandAtCursor():
     if argument_range is not None:
         # strip parentheses and split arguments by comma
         preArgs = [arg.strip() for arg in document.text(argument_range)[1:-1].split(',') if bool(arg.strip())]
-        print(">> EXPAND: arguments = " + repr(arguments))
+        print('>> EXPAND: arguments = ' + repr(arguments))
         # form a dictionary from args w/ '=' character, leave others in a list
         for arg in preArgs:
-            print(">> EXPAND: current arg = " + repr(arg))
+            print('>> EXPAND: current arg = ' + repr(arg))
             if '=' in arg:
                 key, value = [item.strip() for item in arg.split('=')]
-                print(">> EXPAND: key = " + repr(key))
-                print(">> EXPAND: value = " + repr(value))
+                print('>> EXPAND: key = ' + repr(key))
+                print('>> EXPAND: value = ' + repr(value))
                 namedArgs[key] = value
             else:
                 arguments.append(arg)
     # Call user expand function w/ parsed arguments and
     # possible w/ named params dict
     try:
-        print(">> EXPAND: arguments = " + repr(arguments))
-        print(">> EXPAND: named arguments = " + repr(namedArgs))
+        print('>> EXPAND: arguments = ' + repr(arguments))
+        print('>> EXPAND: named arguments = ' + repr(namedArgs))
         if len(namedArgs):
             replacement = func(*arguments, **namedArgs)
         else:
             replacement = func(*arguments)
-    except Exception, e:
+    except Exception as e:
         # remove the top of the exception, it's our code
         try:
             type, value, tb = sys.exc_info()
@@ -246,7 +245,7 @@ def expandAtCursor():
             del tblist[:1]
             l = traceback.format_list(tblist)
             if l:
-                l.insert(0, "Traceback (most recent call last):\n")
+                l.insert(0, 'Traceback (most recent call last):\n')
             l[len(l):] = traceback.format_exception_only(type, value)
         finally:
             tblist = tb = None
@@ -298,7 +297,7 @@ def expandAtCursor():
     if cursorAdvancement is not None:
         # TODO The smartInterface isn't available anymore!
         #      But it's successor (movingInterface) isn't available yet in
-        #      PyKDE4 <= 4.8.3 (at least) :(
+        #      PyKDE4 <= 4.8.3 (at least) :( -- so, lets move a cursor manually...
         while True:
             currentLength = document.lineLength(insertPosition.line())
             if cursorAdvancement <= currentLength:

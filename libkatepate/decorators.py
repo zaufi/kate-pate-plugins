@@ -46,7 +46,7 @@ def check_constraints(action):
 
 def restrict_doc_type(*doc_types):
     def restrict_doc_type_decorator(action):
-        # TODO Investgate required why in opposite params order
+        # TODO Investgation required why in opposite params order
         # keyword arguments can't pass through `partial` binder
         # WTF?? WTF!!
         def doc_type_checker(doc_types, document):

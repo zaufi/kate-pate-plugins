@@ -51,8 +51,8 @@ def getRightNeighbour(lineStr, column):
     return None
 
 def looksLikeTemplateAngelBracket(lineStr, column):
-    """ Check if a symbol at given position looks like a template angel bracket
-    """
+    ''' Check if a symbol at given position looks like a template angel bracket
+    '''
     assert(lineStr[column] in '<>')
     print("?LLTAB: ch='" + lineStr[column] + "'")
     ln = getLeftNeighbour(lineStr, column)
@@ -86,13 +86,13 @@ def looksLikeTemplateAngelBracket(lineStr, column):
 # TODO Probably decorators may help to simplify this code ???
 #
 def getRangeTopology(breakChars):
-    """Get range opened w/ `openCh' and closed w/ `closeCh'
+    '''Get range opened w/ `openCh' and closed w/ `closeCh'
 
         @return tuple w/ current range, list of nested ranges
                 and list of positions of break characters
 
         @note Assume cursor positioned whithin that range already.
-    """
+    '''
     document = kate.activeDocument()
     view = kate.activeView()
     pos = view.cursorPosition()
