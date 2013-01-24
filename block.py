@@ -17,37 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 #
-#
-# Here is a short list of plugins in this file:
-#
-#   Insert Char From Line Above (Meta+E)
-#       add the same char to the current cursor position as in the line above
-#
-#   Insert Char From Line Below (Meta+W)
-#       add the same char to the current cursor position as in the line below
-#
-#   Kill Text After Cursor (Meta+K)
-#       remove text from cursor position to the end of the current line
-#
-#   Kill Text Before Cursor (Meta+U)
-#       remove text from cursor position to the start of the current line
-#       but keep leading spaces (to avoid breaking indentation)
-#
-#   Wrap into Braces (Ctrl+'(')
-#       wrap current word (identifier) or selection into pair of '(' and ')' characters
-#
-#   Wrap into Brackets (Ctrl+{')
-#       wrap current word (identifier) or selection into pair of '[' and ']' characters
-#
-#   Wrap into Curve Brackets (Meta+{')
-#       wrap current word (identifier) or selection into pair of '{' and '}' characters
-#
-#   Wrap into Angle Brackets (Ctrl+<')
-#       wrap current word (identifier) or selection into pair of '<' and '>' characters
-#
-#   Wrap into Quotes (Ctrl+')
-#       wrap current word (identifier) or selection into pair of '"' characters
-#
+
+'''Plugins to work with code blocks'''
 
 import kate
 import kate.gui
@@ -58,7 +29,7 @@ from libkatepate import ui, common
 
 @kate.action('Insert Char From Line Above', shortcut='Meta+E')
 def insertCharFromLineAbove():
-    '''add the same char to the current cursor position as in the line above'''
+    '''Add the same char to the current cursor position as at the line above'''
     doc = kate.activeDocument()
     view = kate.activeView()
     pos = view.cursorPosition()
@@ -78,7 +49,7 @@ def insertCharFromLineAbove():
 
 @kate.action('Insert Char From Line Below', shortcut='Meta+W')
 def insertCharFromLineBelow():
-    '''add the same char to the current cursor position as in the line below'''
+    '''Add the same char to the current cursor position as at the line below'''
     doc = kate.activeDocument()
     view = kate.activeView()
     pos = view.cursorPosition()
@@ -98,7 +69,7 @@ def insertCharFromLineBelow():
 
 @kate.action('Kill Text After Cursor', shortcut='Meta+K')
 def killRestOfLine():
-    '''remove text from cursor position to the end of the current line'''
+    '''Remove text from cursor position to the end of the current line'''
     doc = kate.activeDocument()
     view = kate.activeView()
     pos = view.cursorPosition()
@@ -113,7 +84,8 @@ def killRestOfLine():
 
 @kate.action('Kill Text Before Cursor', shortcut='Meta+U')
 def killLeadOfLine():
-    ''' Remove text from a start of a line to the current crsor position
+    ''' Remove text from a start of a line to the current cursor position
+        but keep leading spaces (to avoid breaking indentation)
 
         NOTE This function suppose spaces as indentation character!
         TODO Get indent character from config
@@ -142,7 +114,7 @@ def _wrapRange(rangeToWrap, openCh, closeCh, doc = None):
 
 
 def _wrapBlockWithChar(openCh, closeCh, indentMultiline = True):
-    '''Wrap next word or selection (if any) into given open and close chars
+    '''Wrap a current word or selection (if any) into given open and close chars
 
        If current selection is multiline, add one indentation level and put
        open/close chars on separate lines
@@ -150,9 +122,6 @@ def _wrapBlockWithChar(openCh, closeCh, indentMultiline = True):
     doc = kate.activeDocument()
     view = kate.activeView()
     pos = view.cursorPosition()
-
-    # Try to extend selection to be started from 0 columns at both ends
-    common.extendSelectionToWholeLine(view)
 
     selectedRange = view.selectionRange()
     if selectedRange.isEmpty():
@@ -173,9 +142,14 @@ def _wrapBlockWithChar(openCh, closeCh, indentMultiline = True):
             selectedRange.end().setColumn(selectedRange.end().column() + len(openCh) + len(closeCh))
             view.setSelection(selectedRange)
         else:
+            # Try to extend selection to be started from 0 columns at both ends
+            common.extendSelectionToWholeLine(view)
+            selectedRange = view.selectionRange()
+
             # multiline selection
             # 0) extend selection to capture whole lines
             gap = ' ' * common.getLineIndentation(selectedRange.start().line(), doc)
+            # TODO Get indent width (and char) from config (get rid of hardcocded '4')
             text = gap + openCh + '\n' \
               + '\n'.join([' ' * 4 + line for line in doc.text(selectedRange).split('\n')[:-1]]) \
               + '\n' + gap + closeCh + '\n'
@@ -184,32 +158,33 @@ def _wrapBlockWithChar(openCh, closeCh, indentMultiline = True):
             doc.endEditing()
 
             # extend current selection
-            selectedRange.end().setColumn(selectedRange.end().column() + len(openCh) + len(closeCh))
             r = KTextEditor.Range(selectedRange.start().line(), 0, selectedRange.end().line() + 2, 0)
             view.setSelection(r)
 
 
 @kate.action('Wrap into Braces', shortcut='Ctrl+(')
 def wrapBlockWithBraces():
-    '''wrap current word (identifier) or selection into pair of '(' and ')' characters'''
+    '''Wrap current word (identifier) or selection into pair of '(' and ')' characters'''
     _wrapBlockWithChar('(', ')')
 
 @kate.action('Wrap into Brackets', shortcut='Ctrl+{')
 def wrapBlockWithBraces():
-    '''wrap current word (identifier) or selection into pair of '[' and ']' characters'''
+    '''Wrap current word (identifier) or selection into pair of '[' and ']' characters'''
     _wrapBlockWithChar('[', ']')
 
 @kate.action('Wrap into Curve Brackets', shortcut='Meta+{')
 def wrapBlockWithBraces():
-    '''wrap current word (identifier) or selection into pair of '{' and '}' characters'''
+    '''Wrap current word (identifier) or selection into pair of '{' and '}' characters'''
     _wrapBlockWithChar('{', '}')
 
 @kate.action('Wrap into Angle Brackets', shortcut='Ctrl+<')
 def wrapBlockWithBraces():
-    '''wrap current word (identifier) or selection into pair of '<' and '>' characters'''
+    '''Wrap current word (identifier) or selection into pair of '<' and '>' characters'''
     _wrapBlockWithChar('<', '>')
 
 @kate.action('Wrap into Quotes', shortcut='Ctrl+\'')
 def wrapBlockWithBraces():
-    '''wrap current word (identifier) or selection into pair of '"' characters'''
+    '''Wrap current word (identifier) or selection into pair of '"' characters'''
     _wrapBlockWithChar('"', '"', False)
+
+# kate: indent-width 4;
