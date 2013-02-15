@@ -76,3 +76,5 @@ macro(python_install DESINATION_DIR)
     endforeach()
 
 endmacro(python_install)
+
+# kate: hl cmake;

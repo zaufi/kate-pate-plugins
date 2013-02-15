@@ -98,6 +98,7 @@ set(
   )
 python_install(${CMAKE_INSTALL_PREFIX}/${EXPAND_DIR} ${EXPAND_SOURCES})
 
+install(FILES commentar-config.ui DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 #---------------------------------------------------------
 # Section: Configure package options
