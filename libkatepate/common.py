@@ -58,8 +58,10 @@ def getBoundTextRangeSL(leftBoundary, rightBoundary, pos, doc):
         return KTextEditor.Range(pos, pos)
 
     lineStr = doc.line(pos.line())                          # Get the current line as string to analyse
+    print("getBoundTextRangeSL: line = '%1%'" % lineStr)
     found = False
     for cc in range(pos.column(), -1, -1):                  # Moving towards line start
+        print("getBoundTextRangeSL: pos=%1%" % cc)
         found = lineStr[cc] in leftBoundary                 # Check the current char for left boundary terminators
         if found:
             break                                           # Break the loop if found smth
@@ -67,6 +69,7 @@ def getBoundTextRangeSL(leftBoundary, rightBoundary, pos, doc):
     startPos = KTextEditor.Cursor(pos.line(), cc + int(found))
 
     found = False
+    cc = pos.column()
     for cc in range(pos.column(), len(lineStr)):            # Moving towards line end
         found = lineStr[cc] in rightBoundary                # Check the current char for right boundary terminators
         if found:
