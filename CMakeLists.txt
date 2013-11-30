@@ -7,10 +7,9 @@
 #---------------------------------------------------------
 # Section: Init cmake
 #---------------------------------------------------------
-cmake_minimum_required(VERSION 2.6)
-cmake_policy(SET CMP0002 OLD)
+cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
 
 project(kate-pate-plugins NONE)
 
@@ -48,6 +47,13 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 file(TO_CMAKE_PATH "${_data_dir}" _data_dir)
+execute_process(
+    COMMAND "${KDE4_KDECONFIG_EXECUTABLE}" --path services
+    OUTPUT_VARIABLE _services_dir
+    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+file(TO_CMAKE_PATH "${_services_dir}" _services_dir)
 
 if(INSTALL_TYPE STREQUAL "user")
     find_path(
@@ -55,50 +61,26 @@ if(INSTALL_TYPE STREQUAL "user")
         NAMES kfileplaces/bookmarks.xml kabc/std.vcf kconf_update/log/update.log
         HINTS ${_data_dir}
       )
+    list(GET _services_dir 0 KDE4_SERVICES_DIR)
 else()
     # TODO Check some other systems: is this file require to install some devel packages?
     find_path(KDE4_DATA_DIR cmake/modules/FindKDE4Internal.cmake HINTS ${_data_dir})
+     find_path(KDE4_SERVICES_DIR katepart.desktop HINTS ${_services_dir})
 endif()
 set(CMAKE_INSTALL_PREFIX "${KDE4_DATA_DIR}/kate/pate")
-
 
 #---------------------------------------------------------
 # Section: Install package files
 #---------------------------------------------------------
-include(PythonMacros)
+include(PythonInstall)
 
-# set(LIBKATEPATE_DIR libkatepate)
-# set(
-#     LIBKATEPATE_SOURCES
-#     ${LIBKATEPATE_DIR}/__init__.py
-#     ${LIBKATEPATE_DIR}/common.py
-#     ${LIBKATEPATE_DIR}/decorators.py
-#     ${LIBKATEPATE_DIR}/pred.py
-#     ${LIBKATEPATE_DIR}/selection.py
-#     ${LIBKATEPATE_DIR}/ui.py
-#   )
-# python_install(${CMAKE_INSTALL_PREFIX}/${LIBKATEPATE_DIR} ${LIBKATEPATE_SOURCES})
-#
-# set(
-#     PLUGIN_SOURCES
-#     block.py
-#     commentar.py
-#     expand/expand.py
-#     format.py
-#     tools.py
-#   )
-# python_install(${CMAKE_INSTALL_PREFIX} ${PLUGIN_SOURCES})
-#
-# set(EXPAND_DIR expand)
-# set(
-#     EXPAND_SOURCES
-#     expand/text_x-c++src.expand
-#     expand/text_x-c++hdr.expand
-#     expand/text_x-chdr.expand
-#   )
-# python_install(${CMAKE_INSTALL_PREFIX}/${EXPAND_DIR} ${EXPAND_SOURCES})
-#
-# install(FILES commentar-config.ui DESTINATION ${CMAKE_INSTALL_PREFIX})
+set(
+    PLUGIN_SOURCES
+    mtbkpsc.py
+  )
+python_install(FILES ${PLUGIN_SOURCES} DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+install(FILES katepate_mtbkpsc.desktop DESTINATION ${KDE4_SERVICES_DIR})
 
 #---------------------------------------------------------
 # Section: Configure package options
@@ -124,13 +106,11 @@ set(CPACK_SOURCE_GENERATOR TGZ)
 # in absolute path + filename to find files or directories to be excluded
 # from source tarball.
 set(CPACK_SOURCE_IGNORE_FILES
-    "\\\\.gitignore$";
-    "\\\\.kate-swp$";
-    "\\\\.pyc$";
-    "\\\\.tar\\\\.gz$";
-    "\\\\.expandc$";
+    "\\\\.gitignore$"
+    "\\\\.kate-swp$"
+    "\\\\.pyc$"
+    "\\\\.tar\\\\.gz$"
+    "\\\\.expandc$"
     "^.*/\\\\.git.*$"
   )
 include(CPack)
-
-# kate: hl cmake;

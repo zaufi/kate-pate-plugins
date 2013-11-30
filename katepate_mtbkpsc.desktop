@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=Kate/PythonPlugin
+X-KDE-Library=mtbkpsc
+Name=MIME-Type Based KeyPress Statistics Collector
+Comment=My experiment aimed to collect some keypress stats ;-)

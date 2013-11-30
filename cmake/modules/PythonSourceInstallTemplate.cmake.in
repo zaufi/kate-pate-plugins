@@ -1,0 +1,5 @@
+execute_process(
+    COMMAND @PYTHON_EXECUTABLE@ -m compileall $ENV{DESTDIR}/@_py_src@
+  )
+
+# kate: hl cmake;
