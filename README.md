@@ -1,34 +1,19 @@
 What is this?
 =============
 
-  All that u c here is a mine set of plugins for Pâté. Latter is a plugin
-  for KDE's Kate editor which allows to write plugins using Python.
+  All that u c here is a mine set of plugins for Kate/Pâté. 
 
-  Most of this plugins I wrote to help myself writing a C++ code and
-  found them r quite usable. After feedback from my friends (C++ coders too :)
-  I've decided to share them. Anyway if u'd like to make some improvements
-  your changes r welcome... just please share it :)
+  Previous list of plugins alerady in the kate.git repo. Moreover,
+  after huge refactoring I've done in the `master` (after 4.12 release), all that plugins
+  will not work anymore. So they are tagged and deleted from this repo.
 
-  Also I'm not a Python guru yet, so any performance or other optimizations
-  r welcome as well :) I've just found that writing plugins for Kate is easy
-  enough using Python, so I'm just having fun... :)
-
-  U may found a brief plugins description at top of particular .py file.
-
-  In a expand/ subdir is a mine set of plugins for Pâté's example plugin
-  called `expand' :) Latter is quite similar to standard snippets shipped
-  with Kate, but thanx to Python is could be much more powerful...
-  So, mostly, I prefer to use Pâté's expand (Ctrl-E).
+  Some new (experemental) plugins are coming :) in a new format...
 
 
 Requirements
 ============
 
-  Of cause u need a Pâté package installed before. Gentoo users may find it
-  in a kde-testing overlay. Owners of other distros (I'm in doubt that corresponding
-  packages exists) may download it from http://github.com/pag/pate.
-
-  BTW, recently Pâté plugin was commited into playground/ of the Kate git repo.
+  Of cause u need a Kate package with enabled Python plugins host.
 
 
 How to install

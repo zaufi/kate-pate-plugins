@@ -15,9 +15,9 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 project(kate-pate-plugins NONE)
 
 # Set project version numbers
-set(VERSION_MAJOR 0)
-set(VERSION_MINOR 5)
-set(VERSION_PATCH 2)
+set(VERSION_MAJOR 2)
+set(VERSION_MINOR 0)
+set(VERSION_PATCH 0)
 set(VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 #---------------------------------------------------------
@@ -67,38 +67,38 @@ set(CMAKE_INSTALL_PREFIX "${KDE4_DATA_DIR}/kate/pate")
 #---------------------------------------------------------
 include(PythonMacros)
 
-set(LIBKATEPATE_DIR libkatepate)
-set(
-    LIBKATEPATE_SOURCES
-    ${LIBKATEPATE_DIR}/__init__.py
-    ${LIBKATEPATE_DIR}/common.py
-    ${LIBKATEPATE_DIR}/decorators.py
-    ${LIBKATEPATE_DIR}/pred.py
-    ${LIBKATEPATE_DIR}/selection.py
-    ${LIBKATEPATE_DIR}/ui.py
-  )
-python_install(${CMAKE_INSTALL_PREFIX}/${LIBKATEPATE_DIR} ${LIBKATEPATE_SOURCES})
-
-set(
-    PLUGIN_SOURCES
-    block.py
-    commentar.py
-    expand/expand.py
-    format.py
-    tools.py
-  )
-python_install(${CMAKE_INSTALL_PREFIX} ${PLUGIN_SOURCES})
-
-set(EXPAND_DIR expand)
-set(
-    EXPAND_SOURCES
-    expand/text_x-c++src.expand
-    expand/text_x-c++hdr.expand
-    expand/text_x-chdr.expand
-  )
-python_install(${CMAKE_INSTALL_PREFIX}/${EXPAND_DIR} ${EXPAND_SOURCES})
-
-install(FILES commentar-config.ui DESTINATION ${CMAKE_INSTALL_PREFIX})
+# set(LIBKATEPATE_DIR libkatepate)
+# set(
+#     LIBKATEPATE_SOURCES
+#     ${LIBKATEPATE_DIR}/__init__.py
+#     ${LIBKATEPATE_DIR}/common.py
+#     ${LIBKATEPATE_DIR}/decorators.py
+#     ${LIBKATEPATE_DIR}/pred.py
+#     ${LIBKATEPATE_DIR}/selection.py
+#     ${LIBKATEPATE_DIR}/ui.py
+#   )
+# python_install(${CMAKE_INSTALL_PREFIX}/${LIBKATEPATE_DIR} ${LIBKATEPATE_SOURCES})
+#
+# set(
+#     PLUGIN_SOURCES
+#     block.py
+#     commentar.py
+#     expand/expand.py
+#     format.py
+#     tools.py
+#   )
+# python_install(${CMAKE_INSTALL_PREFIX} ${PLUGIN_SOURCES})
+#
+# set(EXPAND_DIR expand)
+# set(
+#     EXPAND_SOURCES
+#     expand/text_x-c++src.expand
+#     expand/text_x-c++hdr.expand
+#     expand/text_x-chdr.expand
+#   )
+# python_install(${CMAKE_INSTALL_PREFIX}/${EXPAND_DIR} ${EXPAND_SOURCES})
+#
+# install(FILES commentar-config.ui DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 #---------------------------------------------------------
 # Section: Configure package options
