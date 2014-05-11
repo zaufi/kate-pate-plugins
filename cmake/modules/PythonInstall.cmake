@@ -73,7 +73,7 @@ function(python_install)
 
 endfunction(python_install)
 
-# X-Chewy-RepoBase: https://raw.github.com/mutanabbi/chewy-cmake-rep/master/
+# X-Chewy-RepoBase: https://raw.githubusercontent.com/mutanabbi/chewy-cmake-rep/master/
 # X-Chewy-Path: PythonInstall.cmake
 # X-Chewy-Version: 2.1
 # X-Chewy-Description: Helper to install Python 3.x scripts
